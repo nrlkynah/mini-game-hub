@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#1a0b3d">
+    <meta name="description" content="Color Chaos: match as many colours as you can in 60 seconds.">
+    <title>Color Chaos · Mini Game Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/styles.css">
+    <script type="module" src="src/main.js"></script>
+</head>
+<body>
+    <div class="blobs" aria-hidden="true"><span></span><span></span><span></span></div>
+
+    <main class="app">
+        <!-- Home -->
+        <section id="screen-home" class="screen home" aria-labelledby="title">
+            <p class="hub">Mini Game Hub</p>
+            <h1 id="title" class="logo" aria-label="Color Chaos">
+                <span class="logo-line"><b>C</b><b>O</b><b>L</b><b>O</b><b>R</b></span>
+                <span class="logo-line"><b>C</b><b>H</b><b>A</b><b>O</b><b>S</b></span>
+            </h1>
+            <p class="tagline">How high can you score?</p>
+
+            <button id="play" type="button" class="btn btn-play">PLAY</button>
+
+            <div class="stat-row">
+                <div class="stat-card"><span>Best Score</span><b id="home-best" data-testid="home-best">0</b></div>
+                <div class="stat-card"><span>Best Combo</span><b id="home-combo">—</b></div>
+            </div>
+
+            <div class="how card">
+                <div class="how-demo" aria-hidden="true">
+                    <i data-color="pink">●</i><i data-color="pink">●</i><i data-color="blue">■</i>
+                    <i data-color="yellow">▲</i><i data-color="pink">●</i><i data-color="green">◆</i>
+                </div>
+                <p><strong>Tap 2 or more touching tiles</strong> of the same colour. Bigger groups score more. Match fast to build a combo!</p>
+            </div>
+
+            <div class="toggles">
+                <button id="sound-toggle" type="button" class="btn btn-chip" aria-pressed="true"><span class="icon" aria-hidden="true">🔊</span> Sound: <span class="value">ON</span></button>
+                <button id="motion-toggle" type="button" class="btn btn-chip" title="Animations: follow device setting, less, or full"><span aria-hidden="true">✨</span> Motion: <span class="value">AUTO</span></button>
+            </div>
+        </section>
+
+        <!-- Game -->
+        <section id="screen-game" class="screen game" aria-label="Color Chaos game" hidden>
+            <header class="hud">
+                <div class="hud-box"><span>Score</span><b id="score" data-testid="score">0</b></div>
+                <div id="timer-wrap" class="hud-box hud-timer"><span>Time</span><b id="timer" data-testid="timer">60</b></div>
+                <div id="combo-wrap" class="hud-box hud-combo"><span>Combo</span><b id="combo" data-testid="combo">—</b></div>
+            </header>
+            <div class="timebar" aria-hidden="true"><span id="timebar"></span></div>
+
+            <div class="board-wrap">
+                <div id="board" class="board" role="group" aria-label="Board. Tap a tile that touches others of the same colour." aria-disabled="true"></div>
+                <div id="fx" class="fx" aria-hidden="true"></div>
+                <div id="countdown" class="overlay countdown" role="status" aria-live="assertive" hidden><span id="countdown-num">3</span></div>
+                <div id="timesup" class="overlay timesup" role="status" hidden><span>TIME'S UP!</span></div>
+            </div>
+
+            <div class="game-foot">
+                <p class="hint">Tap 2+ touching tiles of the same colour</p>
+                <button id="quit" type="button" class="btn btn-chip">✕ Quit</button>
+            </div>
+        </section>
+
+        <!-- Results -->
+        <section id="screen-results" class="screen results" aria-labelledby="results-title" hidden>
+            <div id="confetti" class="confetti" aria-hidden="true"></div>
+            <h2 id="results-title" class="results-title">TIME'S UP!</h2>
+            <p id="new-best" class="new-best" role="status" hidden>🎉 NEW BEST!</p>
+
+            <div class="final card">
+                <span>Score</span>
+                <b id="res-score" data-testid="res-score">0</b>
+            </div>
+
+            <dl class="res-grid">
+                <div class="stat-card"><dt>Best</dt><dd id="res-best">0</dd></div>
+                <div class="stat-card"><dt>Best Combo</dt><dd id="res-combo">—</dd></div>
+                <div class="stat-card"><dt>Matches</dt><dd id="res-matches">0</dd></div>
+            </dl>
+
+            <button id="again" type="button" class="btn btn-play">PLAY AGAIN</button>
+            <button id="home" type="button" class="btn btn-secondary">BACK TO HOME</button>
+        </section>
+    </main>
+
+    <noscript><p class="noscript">Color Chaos needs JavaScript to run.</p></noscript>
+</body>
+</html>
