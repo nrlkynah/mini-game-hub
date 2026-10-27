@@ -1,7 +1,8 @@
 // End-to-end check in a real browser (headless Microsoft Edge or Chrome),
 // driven over the DevTools protocol. No dependencies.
 //
-// It plays one full 60-second round with real clicks and checks the
+// It checks the hub (game cards, opening Color Chaos, back to the hub), then
+// plays one full 60-second round of Color Chaos with real clicks and checks the
 // countdown, scoring, combo, the timer, game over, results, saved best score,
 // sound/motion preferences, reduced motion and the layout at several sizes.
 //
@@ -23,6 +24,7 @@ const BROWSER = process.env.BROWSER ?? [
 const PORT = 5199;
 const DEBUG_PORT = 9333;
 const URL_ROOT = `http://127.0.0.1:${PORT}/`;
+const GAME_URL = `${URL_ROOT}#color-chaos`;
 const OUT = 'e2e-output';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -77,6 +79,24 @@ async function run() {
   await viewport(390, 844, true);
   await open();
   await js('localStorage.clear()');
+
+  // ----- hub -----
+  await open(URL_ROOT);
+  check('the hub is shown first', await js(`!document.getElementById('screen-hub').hidden && document.getElementById('screen-home').hidden`));
+  const cards = await js(`[...document.querySelectorAll('.game-card')].map((c) => ({ id: c.dataset.game, playable: c.classList.contains('is-playable'), status: c.querySelector('.game-status')?.textContent.trim() ?? '' }))`);
+  check('the hub shows five game cards', cards.length === 5, cards.map((c) => c.id).join(', '));
+  check('only Color Chaos is playable', cards.filter((c) => c.playable).map((c) => c.id).join() === 'color-chaos');
+  check('the other four are coming soon/next', cards.filter((c) => !c.playable).every((c) => /Coming (Soon|Next)/.test(c.status)), cards.filter((c) => !c.playable).map((c) => c.status).join(' | '));
+  check('the Color Chaos card shows best score 0', (await js(`document.querySelector('[data-game="color-chaos"] .game-best b').textContent`)) === '0');
+  check('hub: no horizontal scrolling', await noHorizontalScroll());
+  await shot('00-hub-390');
+
+  await click('[data-testid="play-color-chaos"]');
+  await sleep(200);
+  check('the Color Chaos card opens the game', await js(`location.hash === '#color-chaos' && !document.getElementById('screen-home').hidden && document.getElementById('screen-hub').hidden`));
+  await click('#back-to-hub');
+  await sleep(200);
+  check('Back to Hub returns to the hub', await js(`!document.getElementById('screen-hub').hidden && document.getElementById('screen-home').hidden`));
   await open();
 
   // ----- home -----
@@ -160,6 +180,9 @@ async function run() {
   // ----- persistence -----
   await open();
   check('best score persists after refresh', (await text('home-best')) === finalHud);
+  await open(URL_ROOT);
+  check('the hub card shows the saved best score', (await js(`document.querySelector('[data-game="color-chaos"] .game-best b').textContent`)) === finalHud);
+  await open();
   const saved = JSON.parse(await js(`localStorage.getItem('mgh.colorChaos.best.v1')`));
   check('localStorage holds integers only', Number.isSafeInteger(saved.score) && Number.isSafeInteger(saved.combo), JSON.stringify(saved));
   await js(`localStorage.setItem('mgh.colorChaos.best.v1', '{broken')`);
@@ -195,6 +218,11 @@ async function run() {
   // ----- layout at several sizes -----
   for (const [w, h, mobile] of [[360, 640, true], [390, 844, true], [768, 1024, true], [1280, 800, false]]) {
     await viewport(w, h, mobile);
+    await open(URL_ROOT);
+    await sleep(500); // let the cards finish sliding in
+    const hubOk = await noHorizontalScroll();
+    await shot(`05-hub-${w}`);
+    check(`${w}×${h}: hub has no horizontal scroll`, hubOk);
     await open();
     const homeOk = await noHorizontalScroll();
     const playFits = await js(`(() => { const b = document.getElementById('play').getBoundingClientRect(); return b.height >= 44 && b.right <= innerWidth; })()`);
@@ -230,10 +258,13 @@ async function run() {
 
 // ----- page helpers -----
 
-async function open() {
-  const loaded = ws.once('Page.loadEventFired');
-  await ws.send('Page.navigate', { url: URL_ROOT });
-  await loaded;
+/** Load a page fresh (via about:blank, so a hash-only change still reloads). Defaults to Color Chaos. */
+async function open(url = GAME_URL) {
+  for (const target of ['about:blank', url]) {
+    const loaded = ws.once('Page.loadEventFired');
+    await ws.send('Page.navigate', { url: target });
+    await loaded;
+  }
   await sleep(150);
 }
 

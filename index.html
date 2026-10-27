@@ -3,41 +3,61 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#1a0b3d">
-    <meta name="description" content="Color Chaos: match as many colours as you can in 60 seconds.">
-    <title>Color Chaos · Mini Game Hub</title>
+    <meta name="theme-color" content="#05040f">
+    <meta name="description" content="Mini Game Hub: a neon arcade of quick browser games, starting with Color Chaos.">
+    <title>Mini Game Hub · Your Neon Arcade</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="src/styles.css">
     <script type="module" src="src/main.js"></script>
 </head>
 <body>
-    <div class="blobs" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="bg" aria-hidden="true">
+        <span class="bg-dots"></span>
+        <span class="bg-dots bg-dots-far"></span>
+        <span class="bg-floor"></span>
+    </div>
 
     <main class="app">
-        <!-- Home -->
-        <section id="screen-home" class="screen home" aria-labelledby="title">
-            <p class="hub">Mini Game Hub</p>
-            <h1 id="title" class="logo" aria-label="Color Chaos">
-                <span class="logo-line"><b>C</b><b>O</b><b>L</b><b>O</b><b>R</b></span>
-                <span class="logo-line"><b>C</b><b>H</b><b>A</b><b>O</b><b>S</b></span>
+        <nav class="topbar" aria-label="Main">
+            <a class="brand" href="#"><span class="brand-mark" aria-hidden="true">◆</span> Mini Game Hub</a>
+            <a class="btn btn-chip" href="#">Home</a>
+        </nav>
+
+        <!-- Hub -->
+        <section id="screen-hub" class="screen hub-screen" aria-labelledby="hub-title">
+            <h1 id="hub-title" class="hub-logo" aria-label="Mini Game Hub">
+                <span class="hub-logo-mini">MINI GAME</span>
+                <span class="hub-logo-hub">HUB</span>
             </h1>
+            <p class="subtitle">Your Neon Arcade</p>
+            <div id="hub-games" class="game-grid"></div>
+        </section>
+
+        <!-- Color Chaos: home -->
+        <section id="screen-home" class="screen home" aria-labelledby="title" hidden>
+            <a id="back-to-hub" class="back-link" href="#">← Back to Hub</a>
+            <h1 id="title" class="logo" aria-label="Color Chaos">
+                <span class="logo-line logo-color">COLOR</span>
+                <span class="logo-line logo-chaos">CHAOS</span>
+            </h1>
+            <p class="subtitle">60 Second Neon Challenge</p>
             <p class="tagline">How high can you score?</p>
 
-            <button id="play" type="button" class="btn btn-play">PLAY</button>
+            <button id="play" type="button" class="btn btn-play"><span class="btn-icon" aria-hidden="true">▶</span> PLAY NOW</button>
 
             <div class="stat-row">
-                <div class="stat-card"><span>Best Score</span><b id="home-best" data-testid="home-best">0</b></div>
-                <div class="stat-card"><span>Best Combo</span><b id="home-combo">—</b></div>
+                <div class="stat stat-main"><span>Best Score</span><b id="home-best" data-testid="home-best">0</b></div>
+                <div class="stat stat-alt"><span>Best Combo</span><b id="home-combo">—</b></div>
             </div>
 
-            <div class="how card">
+            <div class="how panel">
                 <div class="how-demo" aria-hidden="true">
                     <i data-color="pink">●</i><i data-color="pink">●</i><i data-color="blue">■</i>
                     <i data-color="yellow">▲</i><i data-color="pink">●</i><i data-color="green">◆</i>
                 </div>
-                <p><strong>Tap 2 or more touching tiles</strong> of the same colour. Bigger groups score more. Match fast to build a combo!</p>
+                <p><span class="how-tag">How to play</span><strong>Tap 2 or more touching tiles</strong> of the same colour. Bigger groups score more. Match fast to build a combo!</p>
             </div>
 
             <div class="toggles">
@@ -46,10 +66,10 @@
             </div>
         </section>
 
-        <!-- Game -->
+        <!-- Color Chaos: game -->
         <section id="screen-game" class="screen game" aria-label="Color Chaos game" hidden>
             <header class="hud">
-                <div class="hud-box"><span>Score</span><b id="score" data-testid="score">0</b></div>
+                <div class="hud-box hud-score"><span>Score</span><b id="score" data-testid="score">0</b></div>
                 <div id="timer-wrap" class="hud-box hud-timer"><span>Time</span><b id="timer" data-testid="timer">60</b></div>
                 <div id="combo-wrap" class="hud-box hud-combo"><span>Combo</span><b id="combo" data-testid="combo">—</b></div>
             </header>
@@ -68,28 +88,29 @@
             </div>
         </section>
 
-        <!-- Results -->
+        <!-- Color Chaos: results -->
         <section id="screen-results" class="screen results" aria-labelledby="results-title" hidden>
             <div id="confetti" class="confetti" aria-hidden="true"></div>
+            <p class="eyebrow">Game Over</p>
             <h2 id="results-title" class="results-title">TIME'S UP!</h2>
-            <p id="new-best" class="new-best" role="status" hidden>🎉 NEW BEST!</p>
+            <p id="new-best" class="new-best" role="status" hidden>NEW HIGH SCORE!</p>
 
-            <div class="final card">
+            <div class="final">
                 <span>Score</span>
                 <b id="res-score" data-testid="res-score">0</b>
             </div>
 
             <dl class="res-grid">
-                <div class="stat-card"><dt>Best</dt><dd id="res-best">0</dd></div>
-                <div class="stat-card"><dt>Best Combo</dt><dd id="res-combo">—</dd></div>
-                <div class="stat-card"><dt>Matches</dt><dd id="res-matches">0</dd></div>
+                <div class="stat"><dt>Best</dt><dd id="res-best">0</dd></div>
+                <div class="stat stat-alt"><dt>Best Combo</dt><dd id="res-combo">—</dd></div>
+                <div class="stat"><dt>Matches</dt><dd id="res-matches">0</dd></div>
             </dl>
 
-            <button id="again" type="button" class="btn btn-play">PLAY AGAIN</button>
-            <button id="home" type="button" class="btn btn-secondary">BACK TO HOME</button>
+            <button id="again" type="button" class="btn btn-play"><span class="btn-icon" aria-hidden="true">▶</span> PLAY AGAIN</button>
+            <button id="home" type="button" class="btn btn-secondary">HOME</button>
         </section>
     </main>
 
-    <noscript><p class="noscript">Color Chaos needs JavaScript to run.</p></noscript>
+    <noscript><p class="noscript">Mini Game Hub needs JavaScript to run.</p></noscript>
 </body>
 </html>

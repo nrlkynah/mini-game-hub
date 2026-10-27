@@ -107,6 +107,29 @@ export function createBoardView(root, fx, { onTap, reducedMotion }) {
       ).onfinish = () => ghost.remove();
     }
 
+    if (!reduced) {
+      // A neon ring and a few sparks from the tapped tile.
+      const burst = cellElement('burst', move.row, move.col);
+      burst.dataset.color = color;
+      fx.append(burst);
+      burst.animate(
+        [{ transform: 'scale(0.4)', opacity: 1 }, { transform: 'scale(2.1)', opacity: 0 }],
+        { duration: 420, easing: 'cubic-bezier(.2,.7,.3,1)' },
+      ).onfinish = () => burst.remove();
+
+      const sparks = Math.min(4 + move.cells.length, 10);
+      for (let i = 0; i < sparks; i++) {
+        const angle = (i / sparks) * Math.PI * 2;
+        const spark = cellElement('spark', move.row, move.col);
+        spark.dataset.color = color;
+        fx.append(spark);
+        spark.animate(
+          [{ transform: 'translate(0, 0) scale(1)', opacity: 1 }, { transform: `translate(${Math.cos(angle) * 110}%, ${Math.sin(angle) * 110}%) scale(0.3)`, opacity: 0 }],
+          { duration: 460, easing: 'cubic-bezier(.2,.7,.3,1)' },
+        ).onfinish = () => spark.remove();
+      }
+    }
+
     const float = cellElement('float', move.row, move.col);
     float.innerHTML = `+${move.points.toLocaleString('en-US')}${move.combo > 1 ? `<small>x${move.combo}</small>` : ''}`;
     fx.append(float);
@@ -116,6 +139,43 @@ export function createBoardView(root, fx, { onTap, reducedMotion }) {
         : [{ transform: 'translate(-25%, 0) scale(0.8)', opacity: 0 }, { transform: 'translate(-25%, -60%) scale(1.15)', opacity: 1, offset: 0.25 }, { transform: 'translate(-25%, -160%) scale(1)', opacity: 0 }],
       { duration: reduced ? 500 : 800, easing: 'ease-out' },
     ).onfinish = () => float.remove();
+  }
+
+  /** A banner over the board for combos of x3 and up; louder for bigger combos. */
+  function showCombo(combo) {
+    const tier = comboTier(combo);
+    if (combo < 3) {
+      return;
+    }
+
+    fx.querySelector('.combo-banner')?.remove();
+    const banner = document.createElement('div');
+    banner.className = 'combo-banner';
+    banner.dataset.tier = String(tier);
+    banner.innerHTML = `<b>COMBO x${combo}</b>${tier === 3 ? '<small>MAX COMBO!</small>' : ''}`;
+    fx.append(banner);
+
+    const reduced = reducedMotion();
+    const peak = [1.05, 1.1, 1.2, 1.3][tier];
+    banner.animate(
+      reduced
+        ? [{ opacity: 1 }, { opacity: 1, offset: 0.7 }, { opacity: 0 }]
+        : [
+          { transform: 'translate(-50%, -50%) scale(0.4)', opacity: 0 },
+          { transform: `translate(-50%, -50%) scale(${peak})`, opacity: 1, offset: 0.2 },
+          { transform: 'translate(-50%, -50%) scale(1)', opacity: 1, offset: 0.65 },
+          { transform: 'translate(-50%, -80%) scale(1)', opacity: 0 },
+        ],
+      { duration: tier === 3 ? 1200 : 850, easing: 'ease-out' },
+    ).onfinish = () => banner.remove();
+
+    if (tier === 3 && !reduced) {
+      const flash = document.createElement('div');
+      flash.className = 'combo-flash';
+      fx.append(flash);
+      flash.animate([{ opacity: 0.9, transform: 'scale(0.9)' }, { opacity: 0, transform: 'scale(1.15)' }], { duration: 600, easing: 'ease-out' })
+        .onfinish = () => flash.remove();
+    }
   }
 
   /** A lone tile was tapped: a little shake (a quick flash with reduced motion). */
@@ -151,7 +211,19 @@ export function createBoardView(root, fx, { onTap, reducedMotion }) {
     return el;
   }
 
-  return { render, showMatch, showInvalid, setLocked, focusBoard };
+  return { render, showMatch, showCombo, showInvalid, setLocked, focusBoard };
+}
+
+/** How loud the combo effects are: 0 none, 1 x2–x4, 2 x5–x9, 3 x10. */
+export function comboTier(combo) {
+  if (combo >= 10) {
+    return 3;
+  }
+  if (combo >= 5) {
+    return 2;
+  }
+
+  return combo >= 2 ? 1 : 0;
 }
 
 function clamp(value, size) {

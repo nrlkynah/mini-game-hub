@@ -1,5 +1,5 @@
 // Syntax check for every JavaScript file (node --check), no dependencies.
-// Also makes sure every element id used in main.js exists in index.html.
+// Also makes sure every element id looked up in src/ exists in index.html.
 
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -29,12 +29,12 @@ for (const file of files) {
 }
 
 const html = readFileSync('index.html', 'utf8');
-const main = readFileSync('src/main.js', 'utf8');
-const ids = [...main.matchAll(/\$\('([^']+)'\)/g)].map((m) => m[1]);
+const source = files.filter((f) => /^src[\\/]/.test(f)).map((f) => readFileSync(f, 'utf8')).join('\n');
+const ids = [...new Set([...source.matchAll(/(?:\$|getElementById)\('([^']+)'\)/g)].map((m) => m[1]))];
 const missing = ids.filter((id) => !html.includes(`id="${id}"`));
 if (missing.length) {
     failed++;
-    console.error(`✗ index.html is missing ids used by src/main.js: ${missing.join(', ')}`);
+    console.error(`✗ index.html is missing ids used in src/: ${missing.join(', ')}`);
 }
 
 console.log(failed ? `${failed} problem(s) found.` : `OK: ${files.length} files pass node --check, ${ids.length} element ids found.`);
