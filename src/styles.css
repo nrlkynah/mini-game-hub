@@ -442,10 +442,13 @@ button { font: inherit; color: inherit; }
     text-shadow: 0 0 10px var(--cyan), 0 0 26px rgba(34, 241, 255, 0.5);
 }
 
+.game-card.is-wide { grid-column: 1 / -1; }
+
+/* Wide screens: the playable games side by side, the locked ones in a row below. */
 @media (min-width: 1024px) {
-    .game-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 16px; }
-    .game-card.is-playable { grid-column: span 2; grid-row: span 2; justify-content: center; }
-    .game-card.is-locked { justify-content: center; }
+    .game-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+    .game-card.is-playable { grid-column: span 3; justify-content: center; }
+    .game-card.is-locked, .game-card.is-wide { grid-column: span 2; justify-content: center; }
 }
 
 /* ---------- home: title screen ---------- */
@@ -875,6 +878,245 @@ button { font: inherit; color: inherit; }
 
 .noscript { text-align: center; padding: 2rem; }
 
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ==========================================================================
+   Neon Reflex: same arcade, its own identity. Hot magenta targets on a
+   radar-style arena, electric-blue title, lime for speed.
+   ========================================================================== */
+
+/* ---------- title screen ---------- */
+
+.reflex-logo { font-size: clamp(2.6rem, 14.5vw, 5.6rem); }
+.reflex-logo .logo-line { transform: skewX(-9deg); }
+.reflex-neon {
+    color: #e1e8ff;
+    text-shadow: 0 0 4px var(--blue), 0 0 14px var(--blue), 0 0 34px rgba(59, 130, 255, 0.75), 0 0 70px rgba(157, 92, 255, 0.5);
+}
+.reflex-word {
+    color: #ffe0f8;
+    text-shadow: 0 0 4px var(--magenta), 0 0 14px var(--magenta), 0 0 34px rgba(255, 43, 214, 0.75), 0 0 70px rgba(255, 43, 214, 0.35);
+    animation: flicker 4.2s linear infinite;
+}
+.reflex-bolt { display: inline-block; margin-right: 0.08em; font-size: 0.62em; vertical-align: 0.18em; filter: drop-shadow(0 0 10px rgba(255, 224, 58, 0.9)); }
+
+.stat-fast { --accent: var(--lime); border-color: rgba(166, 255, 60, 0.28); }
+.reflex-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.reflex-stats .stat { padding: 10px 6px 8px; }
+.reflex-stats .stat b, .reflex-stats .stat-main b { font-size: clamp(1rem, 4.6vw, 1.6rem); white-space: nowrap; }
+
+/* A small target as the "how to play" picture */
+.how-target {
+    position: relative;
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 3px solid var(--magenta);
+    box-shadow: 0 0 12px var(--magenta), inset 0 0 10px rgba(255, 43, 214, 0.5);
+}
+.how-target::before { content: ''; position: absolute; inset: 11px; border-radius: 50%; border: 2px dashed var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+.how-target i { position: absolute; inset: 21px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px #fff, 0 0 14px var(--magenta); }
+
+/* ---------- game: full-height screen, wider on desktop ---------- */
+
+.is-reflex-game .app { max-width: 980px; height: 100dvh; }
+.reflex-game { min-height: 0; }
+.reflex-game .game-foot { flex-shrink: 0; }
+
+.reflex-hud { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; flex-shrink: 0; }
+.reflex-hud .hud-box { padding: 7px 4px 6px; }
+.reflex-hud .hud-box span { font-size: 0.56rem; letter-spacing: 0.2em; }
+.reflex-hud .hud-box b { font-size: clamp(0.95rem, 4.4vw, 1.5rem); }
+.reflex-hud b em { font-style: normal; }
+.reflex-hud b small { font-size: 0.58em; opacity: 0.7; }
+.hud-round { --accent: var(--purple); }
+.hud-fast { --accent: var(--lime); }
+
+/* ---------- game: the arena ---------- */
+
+.arena-wrap {
+    /* Target size, and how far target centres stay from the arena's edges */
+    --t: clamp(64px, 14vmin, 108px);
+    --edge-pad: calc(var(--t) / 2 + 12px);
+    position: relative;
+    flex: 1;
+    width: 100%;
+    min-height: 240px;
+}
+.arena-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -8%;
+    z-index: -1;
+    background: radial-gradient(closest-side, rgba(255, 43, 214, 0.16), rgba(59, 130, 255, 0.08) 60%, transparent);
+    pointer-events: none;
+}
+.arena-wrap::after {
+    --b: linear-gradient(var(--magenta), var(--magenta));
+    content: '';
+    position: absolute;
+    inset: -5px;
+    pointer-events: none;
+    background:
+        var(--b) top left / 24px 2px no-repeat, var(--b) top left / 2px 24px no-repeat,
+        var(--b) top right / 24px 2px no-repeat, var(--b) top right / 2px 24px no-repeat,
+        var(--b) bottom left / 24px 2px no-repeat, var(--b) bottom left / 2px 24px no-repeat,
+        var(--b) bottom right / 24px 2px no-repeat, var(--b) bottom right / 2px 24px no-repeat;
+    filter: drop-shadow(0 0 4px var(--magenta));
+}
+
+.arena {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 18px;
+    background:
+        repeating-radial-gradient(circle at 50% 50%, transparent 0 69px, rgba(34, 241, 255, 0.07) 70px 71px),
+        linear-gradient(rgba(59, 130, 255, 0.06) 1px, transparent 1px) 50% 50% / 40px 40px,
+        linear-gradient(90deg, rgba(59, 130, 255, 0.06) 1px, transparent 1px) 50% 50% / 40px 40px,
+        radial-gradient(60% 60% at 50% 50%, rgba(157, 92, 255, 0.18), transparent 75%),
+        linear-gradient(180deg, rgba(12, 9, 38, 0.95), rgba(4, 3, 14, 0.97));
+    border: 1px solid rgba(255, 43, 214, 0.45);
+    box-shadow:
+        0 0 0 1px rgba(59, 130, 255, 0.25),
+        0 0 26px rgba(255, 43, 214, 0.18),
+        0 0 70px rgba(59, 130, 255, 0.15),
+        inset 0 0 40px rgba(157, 92, 255, 0.12);
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.arena.is-locked { cursor: default; }
+.arena:focus { outline: none; }
+.arena:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
+
+/* A slow radar sweep */
+.arena-radar {
+    position: absolute;
+    inset: -50%;
+    background: conic-gradient(from 0deg, transparent 0 300deg, rgba(34, 241, 255, 0.02) 320deg, rgba(34, 241, 255, 0.12) 359deg, transparent 360deg);
+    animation: spin 5s linear infinite;
+    pointer-events: none;
+}
+@keyframes spin { to { transform: rotate(1turn); } }
+
+/* Targets and effects share one way of placing things: x, y in [0, 1) across the arena, inset by --edge-pad. */
+.nr-target, .nr-at {
+    position: absolute;
+    left: calc(var(--edge-pad) + var(--x) * (100% - 2 * var(--edge-pad)));
+    top: calc(var(--edge-pad) + var(--y) * (100% - 2 * var(--edge-pad)));
+    translate: -50% -50%;
+}
+
+.nr-target {
+    z-index: 1;
+    width: var(--t);
+    height: var(--t);
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 43, 214, 0.32), rgba(255, 43, 214, 0.08) 62%, transparent 72%);
+    cursor: pointer;
+    touch-action: none;
+}
+.nr-target span { position: absolute; border-radius: 50%; pointer-events: none; }
+.nr-target.is-in { animation: target-in 0.16s cubic-bezier(.2,.9,.3,1.4); }
+@keyframes target-in { from { transform: scale(0.2); opacity: 0; } }
+
+/* Glow pulse: a ring that keeps expanding out of the target */
+.nr-target::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--magenta);
+    box-shadow: 0 0 14px var(--magenta);
+    animation: target-pulse 0.9s ease-out infinite;
+    pointer-events: none;
+}
+@keyframes target-pulse { from { transform: scale(0.9); opacity: 0.9; } to { transform: scale(1.75); opacity: 0; } }
+
+.nr-ring { inset: 5%; border: 3px solid var(--magenta); box-shadow: 0 0 12px var(--magenta), 0 0 28px rgba(255, 43, 214, 0.6), inset 0 0 14px rgba(255, 43, 214, 0.6); }
+.nr-ring-inner { inset: 27%; border: 2px dashed var(--cyan); box-shadow: 0 0 10px var(--cyan), inset 0 0 8px rgba(34, 241, 255, 0.5); animation: spin 2.4s linear infinite; }
+.nr-core { inset: 41%; background: #fff; box-shadow: 0 0 8px #fff, 0 0 18px var(--magenta), 0 0 34px var(--magenta); }
+.nr-target .nr-cross {
+    --l: linear-gradient(var(--cyan), var(--cyan));
+    inset: -18%;
+    border-radius: 0;
+    background:
+        var(--l) 50% 0 / 2px 22% no-repeat, var(--l) 50% 100% / 2px 22% no-repeat,
+        var(--l) 0 50% / 22% 2px no-repeat, var(--l) 100% 50% / 22% 2px no-repeat;
+    filter: drop-shadow(0 0 4px var(--cyan));
+}
+@media (hover: hover) {
+    .nr-target:hover { filter: brightness(1.2); }
+}
+
+/* Grade colours: hits, and the miss */
+[data-grade="perfect"] { --g: var(--lime); }
+[data-grade="great"] { --g: var(--cyan); }
+[data-grade="good"] { --g: #7aa8ff; }
+[data-grade="slow"] { --g: var(--purple); }
+[data-grade="miss"] { --g: var(--danger); }
+
+.arena-fx { position: absolute; inset: 0; z-index: 2; overflow: hidden; border-radius: 18px; pointer-events: none; }
+
+.nr-flash { position: absolute; inset: 0; background: radial-gradient(circle, rgba(255, 255, 255, 0.22), rgba(255, 43, 214, 0.14) 50%, transparent 80%); }
+.nr-burst { width: var(--t); height: var(--t); border-radius: 50%; border: 3px solid var(--g); box-shadow: 0 0 18px var(--g), inset 0 0 14px var(--g); }
+.nr-spark { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px #fff, 0 0 14px var(--g); }
+.nr-ghost { width: var(--t); height: var(--t); border-radius: 50%; border: 3px solid var(--danger); box-shadow: 0 0 14px var(--danger); }
+
+.nr-float {
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: var(--font-display);
+    font-weight: 900;
+    line-height: 1.1;
+    white-space: nowrap;
+    text-align: center;
+}
+.nr-float b { font-size: clamp(1.3rem, 5.4vw, 1.9rem); color: #fff; text-shadow: 0 0 6px var(--g), 0 0 18px var(--g), 0 2px 0 rgba(0, 0, 0, 0.6); }
+.nr-float span { font-size: clamp(0.95rem, 4vw, 1.2rem); color: #fff; text-shadow: 0 0 8px var(--g); }
+.nr-float small { margin-top: 2px; font-size: 0.66rem; letter-spacing: 0.3em; color: var(--g); text-shadow: 0 0 10px var(--g); }
+
+.nr-ripple {
+    position: absolute;
+    width: 46px;
+    height: 46px;
+    translate: -50% -50%;
+    border-radius: 50%;
+    border: 2px solid rgba(157, 92, 255, 0.85);
+    box-shadow: 0 0 10px rgba(157, 92, 255, 0.6);
+}
+.nr-early {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.9rem;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.reflex-game .overlay { border-radius: 18px; }
+
+/* ---------- results ---------- */
+
+.reflex-results { overflow-x: clip; } /* keep the record glow and confetti from widening the page */
+.reflex-results .results-title { font-size: clamp(1.7rem, 8.5vw, 3rem); line-height: 1.1; }
+.reflex-res-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.reflex-res-grid dd { white-space: nowrap; }
+.res-grid .stat.is-record { border-color: var(--lime); box-shadow: 0 0 18px rgba(166, 255, 60, 0.45), inset 0 0 12px rgba(166, 255, 60, 0.15); }
+.res-grid .stat.is-record dt::after { content: ' · NEW'; color: var(--lime); }
+.res-record { margin: 0; font-size: 0.85rem; color: var(--muted); }
+
 /* ---------- larger screens ---------- */
 
 @media (min-width: 768px) {
@@ -882,6 +1124,9 @@ button { font: inherit; color: inherit; }
     .hud-box b { font-size: 1.8rem; }
     .hud-timer b { font-size: 2.3rem; }
     .stat-main b { font-size: 2.3rem; }
+    .reflex-hud .hud-box b { font-size: 1.7rem; }
+    .reflex-hud .hud-box span { font-size: 0.62rem; }
+    .reflex-res-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 /* ---------- reduced motion (device setting or the Motion toggle) ---------- */

@@ -6,9 +6,9 @@
 
 export const GAMES = [
   { id: 'color-chaos', icon: '🌈', title: 'Color Chaos', tagline: '60 Second Challenge', status: 'playable', accent: 'cyan' },
-  { id: 'neon-reflex', icon: '⚡', title: 'Neon Reflex', tagline: 'How fast are you?', status: 'next', accent: 'blue' },
+  { id: 'neon-reflex', icon: '⚡', title: 'Neon Reflex', tagline: 'How fast are you?', status: 'playable', accent: 'magenta' },
   { id: 'memory-matrix', icon: '🧠', title: 'Memory Matrix', tagline: 'Remember the light', status: 'soon', accent: 'purple' },
-  { id: 'laser-dodge', icon: '💥', title: 'Laser Dodge', tagline: 'Survive the beam', status: 'soon', accent: 'magenta' },
+  { id: 'laser-dodge', icon: '💥', title: 'Laser Dodge', tagline: 'Survive the beam', status: 'soon', accent: 'blue' },
   { id: 'space-tap', icon: '🚀', title: 'Space Tap', tagline: 'How fast can you tap?', status: 'soon', accent: 'lime' },
 ];
 

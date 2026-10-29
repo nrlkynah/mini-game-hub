@@ -38,6 +38,12 @@ export function createHub(root, players) {
     root.append(card);
   }
 
+  // Locked cards sit two per row on small screens; a last odd one gets the full row.
+  const locked = root.querySelectorAll('.is-locked');
+  if (locked.length % 2 === 1) {
+    locked[locked.length - 1].classList.add('is-wide');
+  }
+
   /** Show the latest best score on each playable card. */
   function refresh() {
     for (const [id, node] of bests) {

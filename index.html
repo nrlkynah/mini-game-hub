@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#05040f">
-    <meta name="description" content="Mini Game Hub: a neon arcade of quick browser games, starting with Color Chaos.">
+    <meta name="description" content="Mini Game Hub: a neon arcade of quick browser games: Color Chaos and Neon Reflex.">
     <title>Mini Game Hub · Your Neon Arcade</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -108,6 +108,82 @@
 
             <button id="again" type="button" class="btn btn-play"><span class="btn-icon" aria-hidden="true">▶</span> PLAY AGAIN</button>
             <button id="home" type="button" class="btn btn-secondary">HOME</button>
+        </section>
+
+        <!-- Neon Reflex: home -->
+        <section id="screen-reflex-home" class="screen home reflex-home" aria-labelledby="nr-title" hidden>
+            <a class="back-link" href="#">← Back to Hub</a>
+            <h1 id="nr-title" class="logo reflex-logo" aria-label="Neon Reflex">
+                <span class="logo-line reflex-neon">NEON</span>
+                <span class="logo-line reflex-word"><span class="reflex-bolt" aria-hidden="true">⚡</span>REFLEX</span>
+            </h1>
+            <p class="subtitle">Test your reaction</p>
+            <p class="tagline">How fast are you?</p>
+
+            <button id="nr-play" type="button" class="btn btn-play"><span class="btn-icon" aria-hidden="true">▶</span> PLAY NOW</button>
+
+            <div class="stat-row reflex-stats">
+                <div class="stat stat-main"><span>Best Score</span><b id="nr-home-best">0</b></div>
+                <div class="stat stat-fast"><span>Best Reaction</span><b id="nr-home-reaction">—</b></div>
+                <div class="stat stat-alt"><span>Best Combo</span><b id="nr-home-combo">—</b></div>
+            </div>
+
+            <div class="how panel">
+                <span class="how-target" aria-hidden="true"><i></i></span>
+                <p><span class="how-tag">How to play</span><strong>Hit the target the instant it appears.</strong> 10 rounds. Faster = more points: under 200&nbsp;ms is PERFECT. Stay under 500&nbsp;ms to build your combo. Keyboard: Space or Enter.</p>
+            </div>
+        </section>
+
+        <!-- Neon Reflex: game -->
+        <section id="screen-reflex-game" class="screen game reflex-game" aria-label="Neon Reflex game" hidden>
+            <header class="hud reflex-hud">
+                <div class="hud-box hud-round"><span>Round</span><b><em id="nr-round">01</em><small>/10</small></b></div>
+                <div class="hud-box hud-score"><span>Score</span><b id="nr-score">0</b></div>
+                <div id="nr-combo-wrap" class="hud-box hud-combo"><span>Combo</span><b id="nr-combo">—</b></div>
+                <div class="hud-box hud-fast"><span>Best</span><b id="nr-best">—</b></div>
+            </header>
+
+            <div class="arena-wrap">
+                <div id="nr-field" class="arena is-locked" tabindex="0" role="application" aria-roledescription="reaction arena" aria-label="Reaction arena. Tap the target, or press Space or Enter, as soon as it appears." aria-disabled="true">
+                    <span class="arena-radar" aria-hidden="true"></span>
+                    <button id="nr-target" type="button" class="nr-target" tabindex="-1" aria-label="Target" hidden>
+                        <span class="nr-cross"></span><span class="nr-ring"></span><span class="nr-ring nr-ring-inner"></span><span class="nr-core"></span>
+                    </button>
+                </div>
+                <div id="nr-fx" class="arena-fx" aria-hidden="true"></div>
+                <div id="nr-countdown" class="overlay countdown" role="status" aria-live="assertive" hidden><span id="nr-countdown-num">3</span></div>
+                <div id="nr-done" class="overlay timesup" role="status" hidden><span>COMPLETE!</span></div>
+            </div>
+            <p id="nr-live" class="sr-only" aria-live="polite"></p>
+
+            <div class="game-foot">
+                <p class="hint">Tap the target fast · or press Space</p>
+                <button id="nr-quit" type="button" class="btn btn-chip">✕ Quit</button>
+            </div>
+        </section>
+
+        <!-- Neon Reflex: results -->
+        <section id="screen-reflex-results" class="screen results reflex-results" aria-labelledby="nr-results-title" hidden>
+            <div id="nr-confetti" class="confetti" aria-hidden="true"></div>
+            <p class="eyebrow">Results</p>
+            <h2 id="nr-results-title" class="results-title">REACTION COMPLETE</h2>
+            <p id="nr-new-best" class="new-best" role="status" hidden>⚡ NEW BEST!</p>
+
+            <div class="final">
+                <span>Your Score</span>
+                <b id="nr-res-score">0</b>
+            </div>
+
+            <dl class="res-grid reflex-res-grid">
+                <div class="stat"><dt>Average Reaction</dt><dd id="nr-res-average">—</dd></div>
+                <div class="stat stat-fast"><dt>Best Reaction</dt><dd id="nr-res-reaction">—</dd></div>
+                <div class="stat stat-alt"><dt>Best Combo</dt><dd id="nr-res-combo">—</dd></div>
+                <div class="stat"><dt>Hits</dt><dd id="nr-res-hits">0/10</dd></div>
+            </dl>
+            <p id="nr-res-record" class="res-record"></p>
+
+            <button id="nr-again" type="button" class="btn btn-play"><span class="btn-icon" aria-hidden="true">▶</span> PLAY AGAIN</button>
+            <button id="nr-home" type="button" class="btn btn-secondary" aria-label="Home: back to the Mini Game Hub">HOME</button>
         </section>
     </main>
 
