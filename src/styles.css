@@ -444,11 +444,13 @@ button { font: inherit; color: inherit; }
 
 .game-card.is-wide { grid-column: 1 / -1; }
 
-/* Wide screens: the playable games side by side, the locked ones in a row below. */
+/* Wide screens: the playable games three across, the locked ones two across below. */
 @media (min-width: 1024px) {
     .game-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
-    .game-card.is-playable { grid-column: span 3; justify-content: center; }
-    .game-card.is-locked, .game-card.is-wide { grid-column: span 2; justify-content: center; }
+    .game-card.is-playable { grid-column: span 2; justify-content: center; }
+    .game-card.is-playable .game-title { font-size: 1.6rem; }
+    .game-card.is-locked { grid-column: span 3; justify-content: center; }
+    .game-card.is-wide { grid-column: 1 / -1; }
 }
 
 /* ---------- home: title screen ---------- */
@@ -901,9 +903,9 @@ button { font: inherit; color: inherit; }
 .reflex-bolt { display: inline-block; margin-right: 0.08em; font-size: 0.62em; vertical-align: 0.18em; filter: drop-shadow(0 0 10px rgba(255, 224, 58, 0.9)); }
 
 .stat-fast { --accent: var(--lime); border-color: rgba(166, 255, 60, 0.28); }
-.reflex-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.reflex-stats .stat { padding: 10px 6px 8px; }
-.reflex-stats .stat b, .reflex-stats .stat-main b { font-size: clamp(1rem, 4.6vw, 1.6rem); white-space: nowrap; }
+.reflex-stats, .matrix-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.reflex-stats .stat, .matrix-stats .stat { padding: 10px 6px 8px; }
+.reflex-stats .stat b, .reflex-stats .stat-main b, .matrix-stats .stat b, .matrix-stats .stat-main b { font-size: clamp(1rem, 4.6vw, 1.6rem); white-space: nowrap; }
 
 /* A small target as the "how to play" picture */
 .how-target {
@@ -924,10 +926,10 @@ button { font: inherit; color: inherit; }
 .reflex-game { min-height: 0; }
 .reflex-game .game-foot { flex-shrink: 0; }
 
-.reflex-hud { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; flex-shrink: 0; }
-.reflex-hud .hud-box { padding: 7px 4px 6px; }
-.reflex-hud .hud-box span { font-size: 0.56rem; letter-spacing: 0.2em; }
-.reflex-hud .hud-box b { font-size: clamp(0.95rem, 4.4vw, 1.5rem); }
+.reflex-hud, .matrix-hud { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; flex-shrink: 0; }
+.reflex-hud .hud-box, .matrix-hud .hud-box { padding: 7px 4px 6px; }
+.reflex-hud .hud-box span, .matrix-hud .hud-box span { font-size: 0.56rem; letter-spacing: 0.2em; }
+.reflex-hud .hud-box b, .matrix-hud .hud-box b { font-size: clamp(0.95rem, 4.4vw, 1.5rem); }
 .reflex-hud b em { font-style: normal; }
 .reflex-hud b small { font-size: 0.58em; opacity: 0.7; }
 .hud-round { --accent: var(--purple); }
@@ -1117,6 +1119,211 @@ button { font: inherit; color: inherit; }
 .res-grid .stat.is-record dt::after { content: ' · NEW'; color: var(--lime); }
 .res-record { margin: 0; font-size: 0.85rem; color: var(--muted); }
 
+/* ==========================================================================
+   Memory Matrix: same arcade, its own identity. A holographic grid with a
+   scanning line; the pattern glows cyan, the player's picks glow magenta.
+   ========================================================================== */
+
+/* ---------- title screen ---------- */
+
+.matrix-logo { font-size: clamp(2.4rem, 13vw, 5.2rem); letter-spacing: 0.08em; }
+.matrix-memory {
+    color: #dcfbff;
+    text-shadow: 0 0 4px var(--cyan), 0 0 14px var(--cyan), 0 0 34px rgba(34, 241, 255, 0.6), 0 0 70px rgba(59, 130, 255, 0.4);
+}
+.matrix-word {
+    color: #efe4ff;
+    text-shadow: 0 0 4px var(--purple), 0 0 14px var(--purple), 0 0 34px rgba(157, 92, 255, 0.8), 0 0 70px rgba(255, 43, 214, 0.35);
+    animation: flicker 5.5s linear infinite;
+}
+.stat-holo { --accent: var(--purple); border-color: rgba(157, 92, 255, 0.35); }
+
+/* A tiny lit grid as the "how to play" picture */
+.how-matrix { display: grid; grid-template-columns: repeat(3, 16px); gap: 4px; flex-shrink: 0; }
+.how-matrix i { width: 16px; height: 16px; border-radius: 4px; background: rgba(157, 92, 255, 0.14); border: 1px solid rgba(157, 92, 255, 0.4); }
+.how-matrix i.on { background: linear-gradient(160deg, var(--cyan), var(--blue)); border-color: #c8fbff; box-shadow: 0 0 10px var(--cyan); }
+
+/* ---------- game: HUD and status line ---------- */
+
+.hud-level { --accent: var(--purple); }
+.hud-holo { --accent: var(--lime); }
+
+.matrix-status { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 28px; }
+.matrix-lives { display: flex; gap: 6px; margin: 0; font-size: 1.15rem; line-height: 1; }
+.matrix-lives i { font-style: normal; filter: drop-shadow(0 0 6px rgba(255, 61, 113, 0.7)); }
+.matrix-lives i.is-lost { filter: grayscale(0.6) brightness(0.7); }
+.matrix-phase {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.72rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    text-shadow: 0 0 8px rgba(34, 241, 255, 0.6);
+    white-space: nowrap;
+}
+
+/* ---------- game: the grid ---------- */
+
+/* Square, and limited by the width and by the height left after the HUD. */
+.matrix-wrap {
+    position: relative;
+    width: min(100%, 460px, calc(100dvh - 290px));
+    min-width: min(100%, 260px);
+    aspect-ratio: 1;
+    flex-shrink: 0;
+}
+.matrix-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -14%;
+    z-index: -1;
+    background: radial-gradient(closest-side, rgba(157, 92, 255, 0.3), rgba(34, 241, 255, 0.08) 60%, transparent);
+    pointer-events: none;
+}
+.matrix-wrap::after {
+    --b: linear-gradient(var(--purple), var(--purple));
+    content: '';
+    position: absolute;
+    inset: -5px;
+    pointer-events: none;
+    background:
+        var(--b) top left / 22px 2px no-repeat, var(--b) top left / 2px 22px no-repeat,
+        var(--b) top right / 22px 2px no-repeat, var(--b) top right / 2px 22px no-repeat,
+        var(--b) bottom left / 22px 2px no-repeat, var(--b) bottom left / 2px 22px no-repeat,
+        var(--b) bottom right / 22px 2px no-repeat, var(--b) bottom right / 2px 22px no-repeat;
+    filter: drop-shadow(0 0 4px var(--purple));
+}
+
+.matrix-grid {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 8px;
+    padding: 10px;
+    overflow: hidden;
+    border-radius: 18px;
+    background:
+        linear-gradient(rgba(157, 92, 255, 0.07) 1px, transparent 1px) 0 0 / 100% 12.5%,
+        linear-gradient(90deg, rgba(157, 92, 255, 0.07) 1px, transparent 1px) 0 0 / 12.5% 100%,
+        linear-gradient(180deg, rgba(16, 11, 46, 0.94), rgba(5, 4, 16, 0.96));
+    border: 1px solid rgba(157, 92, 255, 0.55);
+    box-shadow:
+        0 0 0 1px rgba(34, 241, 255, 0.2),
+        0 0 26px rgba(157, 92, 255, 0.25),
+        0 0 70px rgba(34, 241, 255, 0.12),
+        inset 0 0 30px rgba(157, 92, 255, 0.12);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+/* A holographic scan line that keeps passing over the grid */
+.matrix-grid::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 18%;
+    background: linear-gradient(180deg, transparent, rgba(34, 241, 255, 0.1) 70%, rgba(34, 241, 255, 0.35) 98%, transparent);
+    animation: scan 3.6s linear infinite;
+    pointer-events: none;
+}
+@keyframes scan { from { transform: translateY(-100%); } to { transform: translateY(560%); } }
+
+.mm-tile {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: 1px solid rgba(157, 92, 255, 0.38);
+    border-radius: 12px;
+    cursor: pointer;
+    background:
+        radial-gradient(120% 90% at 30% 15%, rgba(157, 92, 255, 0.16), transparent 60%),
+        rgba(18, 13, 50, 0.92);
+    box-shadow: inset 0 0 14px rgba(157, 92, 255, 0.12), 0 2px 6px rgba(0, 0, 0, 0.45);
+    /* The pattern fades out clearly when it hides */
+    transition: background-color 0.45s ease, box-shadow 0.45s ease, border-color 0.45s ease, transform 0.12s ease;
+    touch-action: none;
+}
+.mm-order {
+    position: relative;
+    z-index: 1;
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(1rem, 5vw, 1.5rem);
+    color: var(--tile-ink);
+    pointer-events: none;
+}
+
+/* The pattern being revealed */
+.mm-tile[data-state="lit"] {
+    border-color: #c8fbff;
+    background: radial-gradient(120% 80% at 30% 15%, rgba(255, 255, 255, 0.6), transparent 50%), linear-gradient(160deg, var(--cyan), #3b82ff 90%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5), 0 0 18px var(--cyan), 0 0 40px rgba(34, 241, 255, 0.5);
+    transition-duration: 0.12s;
+}
+/* The player's picks: bright border, glow, slightly smaller */
+.mm-tile[data-state="picked"] {
+    border: 2px solid #fff;
+    background: radial-gradient(120% 80% at 30% 15%, rgba(255, 255, 255, 0.5), transparent 50%), linear-gradient(160deg, var(--magenta), var(--purple) 90%);
+    box-shadow: 0 0 16px var(--magenta), 0 0 36px rgba(255, 43, 214, 0.5);
+    transform: scale(0.95);
+    transition-duration: 0.1s;
+}
+/* The tile that was expected, after a mistake */
+.mm-tile.is-hint { border: 2px dashed var(--cyan); box-shadow: 0 0 18px rgba(34, 241, 255, 0.7), inset 0 0 14px rgba(34, 241, 255, 0.4); }
+
+@media (hover: hover) {
+    .matrix-grid:not(.is-locked) .mm-tile:not([data-state="picked"]):hover { border-color: rgba(34, 241, 255, 0.8); box-shadow: inset 0 0 16px rgba(34, 241, 255, 0.2), 0 0 14px rgba(34, 241, 255, 0.35); }
+}
+.matrix-grid:not(.is-locked) .mm-tile:active { transform: scale(0.9); }
+.matrix-grid.is-locked .mm-tile { cursor: default; }
+.mm-tile:focus-visible { z-index: 1; outline: 2px solid #fff; outline-offset: 2px; }
+
+.matrix-fx { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+
+.mm-banner {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 12px 20px;
+    border: 1px solid var(--tone);
+    border-radius: 14px;
+    background: rgba(5, 4, 16, 0.82);
+    box-shadow: 0 0 24px color-mix(in srgb, var(--tone) 45%, transparent), inset 0 0 18px color-mix(in srgb, var(--tone) 18%, transparent);
+    font-family: var(--font-display);
+    font-weight: 900;
+    white-space: nowrap;
+    text-align: center;
+    transform: translate(-50%, -50%);
+}
+.mm-banner[data-tone="good"] { --tone: var(--lime); }
+.mm-banner[data-tone="bad"] { --tone: var(--danger); }
+.mm-banner[data-tone="streak"] { --tone: var(--magenta); top: 16%; padding: 6px 16px; }
+.mm-banner b { font-size: clamp(1.15rem, 6vw, 1.6rem); letter-spacing: 0.06em; color: #fff; text-shadow: 0 0 8px var(--tone), 0 0 20px var(--tone); }
+.mm-banner small { font-size: 0.75rem; letter-spacing: 0.24em; color: var(--tone); text-shadow: 0 0 8px var(--tone); }
+.mm-banner small:first-of-type { font-size: 1rem; color: #fff; letter-spacing: 0.08em; }
+
+.matrix-game .overlay { border-radius: 18px; }
+.matrix-game .timesup span { font-size: clamp(1.6rem, 8.5vw, 2.6rem); text-align: center; }
+
+/* ---------- results ---------- */
+
+.matrix-results { overflow-x: clip; } /* keep the record glow and confetti from widening the page */
+.matrix-results .results-title { font-size: clamp(1.7rem, 8.5vw, 3rem); line-height: 1.1; }
+.matrix-results .res-grid dd { white-space: nowrap; }
+
 /* ---------- larger screens ---------- */
 
 @media (min-width: 768px) {
@@ -1124,8 +1331,8 @@ button { font: inherit; color: inherit; }
     .hud-box b { font-size: 1.8rem; }
     .hud-timer b { font-size: 2.3rem; }
     .stat-main b { font-size: 2.3rem; }
-    .reflex-hud .hud-box b { font-size: 1.7rem; }
-    .reflex-hud .hud-box span { font-size: 0.62rem; }
+    .reflex-hud .hud-box b, .matrix-hud .hud-box b { font-size: 1.7rem; }
+    .reflex-hud .hud-box span, .matrix-hud .hud-box span { font-size: 0.62rem; }
     .reflex-res-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 

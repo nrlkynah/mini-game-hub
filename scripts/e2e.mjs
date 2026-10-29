@@ -7,11 +7,13 @@
 // sound/motion preferences, reduced motion and the layout at several sizes.
 // Then it plays Neon Reflex: countdown, hitting targets, misses and false
 // clicks, results, play again, Home back to the hub, keyboard, reduced motion
-// and the layout at several sizes.
+// and the layout at several sizes. Then Memory Matrix: countdown, the pattern
+// showing and hiding, picks, levels, mistakes and lives, game over, results,
+// play again, Home back to the hub, keyboard, reduced motion and layout.
 //
 // Usage: npm run e2e            (set BROWSER=path/to/chrome to override)
-//        E2E_ONLY=color-chaos or E2E_ONLY=neon-reflex to run one game only
-// Takes about 2.5 minutes. Screenshots go to ./e2e-output/.
+//        E2E_ONLY=color-chaos, neon-reflex or memory-matrix to run one game only
+// Takes about 3.5 minutes. Screenshots go to ./e2e-output/.
 
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
@@ -30,6 +32,7 @@ const DEBUG_PORT = 9333;
 const URL_ROOT = `http://127.0.0.1:${PORT}/`;
 const GAME_URL = `${URL_ROOT}#color-chaos`;
 const REFLEX_URL = `${URL_ROOT}#neon-reflex`;
+const MATRIX_URL = `${URL_ROOT}#memory-matrix`;
 const ONLY = process.env.E2E_ONLY;
 const OUT = 'e2e-output';
 
@@ -91,9 +94,9 @@ async function run() {
   check('the hub is shown first', await js(`!document.getElementById('screen-hub').hidden && document.getElementById('screen-home').hidden`));
   const cards = await js(`[...document.querySelectorAll('.game-card')].map((c) => ({ id: c.dataset.game, playable: c.classList.contains('is-playable'), status: c.querySelector('.game-status')?.textContent.trim() ?? '' }))`);
   check('the hub shows five game cards', cards.length === 5, cards.map((c) => c.id).join(', '));
-  check('Color Chaos and Neon Reflex are playable', cards.filter((c) => c.playable).map((c) => c.id).join() === 'color-chaos,neon-reflex');
-  check('the other three are coming soon', cards.filter((c) => !c.playable).map((c) => `${c.id}:${c.status}`).join() === 'memory-matrix:🔒 Coming Soon,laser-dodge:🔒 Coming Soon,space-tap:🔒 Coming Soon', cards.filter((c) => !c.playable).map((c) => c.status).join(' | '));
-  check('only the two playable cards have a Play button', await js(`[...document.querySelectorAll('.game-card .btn-play')].map((b) => b.dataset.testid).join()`) === 'play-color-chaos,play-neon-reflex');
+  check('Color Chaos, Neon Reflex and Memory Matrix are playable', cards.filter((c) => c.playable).map((c) => c.id).join() === 'color-chaos,neon-reflex,memory-matrix');
+  check('the other two are coming soon', cards.filter((c) => !c.playable).map((c) => `${c.id}:${c.status}`).join() === 'laser-dodge:🔒 Coming Soon,space-tap:🔒 Coming Soon', cards.filter((c) => !c.playable).map((c) => c.status).join(' | '));
+  check('only the three playable cards have a Play button', await js(`[...document.querySelectorAll('.game-card .btn-play')].map((b) => b.dataset.testid).join()`) === 'play-color-chaos,play-neon-reflex,play-memory-matrix');
   check('the Color Chaos card shows best score 0', (await js(`document.querySelector('[data-game="color-chaos"] .game-best b').textContent`)) === '0');
   check('hub: no horizontal scrolling', await noHorizontalScroll());
   await shot('00-hub-390');
@@ -105,11 +108,14 @@ async function run() {
   await sleep(200);
   check('Back to Hub returns to the hub', await js(`!document.getElementById('screen-hub').hidden && document.getElementById('screen-home').hidden`));
 
-  if (ONLY !== 'neon-reflex') {
+  if (!ONLY || ONLY === 'color-chaos') {
     await runColorChaos();
   }
-  if (ONLY !== 'color-chaos') {
+  if (!ONLY || ONLY === 'neon-reflex') {
     await runNeonReflex();
+  }
+  if (!ONLY || ONLY === 'memory-matrix') {
+    await runMemoryMatrix();
   }
 
   check('no JavaScript errors in the console', errors.length === 0, errors.slice(0, 3).join(' | '));
@@ -450,6 +456,219 @@ async function runNeonReflex() {
   }
 }
 
+// ----- Memory Matrix -----
+
+async function runMemoryMatrix() {
+  await viewport(390, 844, true);
+  await open(URL_ROOT);
+  const otherBests = await js(`JSON.stringify([localStorage.getItem('mgh.colorChaos.best.v1'), localStorage.getItem('mgh.neonReflex.best.v1')])`);
+  check('matrix: the hub card shows best score 0', (await js(`document.querySelector('[data-game="memory-matrix"] .game-best b').textContent`)) === '0');
+  await click('[data-testid="play-memory-matrix"]');
+  await sleep(200);
+  check('matrix: Play Now opens Memory Matrix', await js(`location.hash === '#memory-matrix' && !document.getElementById('screen-matrix-home').hidden && document.getElementById('screen-hub').hidden`));
+  check('matrix: home shows best 0', (await text('mm-home-best')) === '0' && (await text('mm-home-level')) === '—');
+  await shot('20-matrix-home-390');
+
+  // ----- countdown -----
+  await click('#mm-play');
+  const countdown = [];
+  for (let i = 0; i < 4; i++) {
+    await sleep(i === 0 ? 150 : 800);
+    countdown.push(await text('mm-countdown-num'));
+  }
+  check('matrix: countdown shows 3, 2, 1, GO!', countdown.join(',') === '3,2,1,GO!', countdown.join(','));
+  check('matrix: HUD starts at level 01, score 0, 3 lives', (await text('mm-level')) === '01' && (await text('mm-score')) === '0' && (await lives()) === 3);
+
+  // ----- level 1: the pattern shows, hides, and is repeated -----
+  let tapDuringReveal = null;
+  const level1 = await readPattern(async () => {
+    await shot('21-matrix-reveal-390');
+    await click(`.mm-tile[data-tile="${(await litTiles())[0]}"]`);
+    tapDuringReveal = await js(`document.querySelectorAll('.mm-tile[data-state="picked"]').length`);
+  });
+  check('matrix: the pattern appears tile by tile (3 tiles at level 1)', level1.length === 3, level1.join(','));
+  check('matrix: the grid is locked while the pattern shows', tapDuringReveal === 0);
+  check('matrix: the pattern hides before the player\'s turn', (await litTiles()).length === 0 && (await text('mm-phase')).startsWith('YOUR TURN'));
+
+  await click(tile(level1[0]));
+  check('matrix: a picked tile is marked', await js(`document.querySelector('${tile(level1[0])}').dataset.state === 'picked'`) && (await text('mm-phase')) === 'YOUR TURN · 1/3');
+  await click(tile(level1[0]));
+  check('matrix: the same tile cannot be picked twice', (await js(`document.querySelectorAll('.mm-tile[data-state="picked"]').length`)) === 1 && (await lives()) === 3);
+  await shot('22-matrix-picking-390');
+  for (const t of level1.slice(1)) await click(tile(t));
+  check('matrix: a correct pattern shows PERFECT MEMORY', /PERFECT MEMORY/.test(await js(`document.getElementById('mm-fx').textContent`)));
+  check('matrix: a correct pattern advances the level and scores', (await text('mm-level')) === '02' && Number((await text('mm-score')).replace(/,/g, '')) >= 100 && (await text('mm-streak')) === 'x1');
+  await shot('23-matrix-clear-390');
+
+  // ----- level 2: streak x2 -----
+  const level2 = await readPattern();
+  check('matrix: level 2 shows 4 tiles', level2.length === 4);
+  for (const t of level2) await click(tile(t));
+  check('matrix: clearing levels in a row builds a streak', (await text('mm-streak')) === 'x2' && (await text('mm-level')) === '03');
+  const scoreBeforeMistake = await text('mm-score');
+
+  // ----- level 3: a mistake -----
+  const level3 = await readPattern();
+  await click(tile(level3[0]));
+  await click(tile(wrongFor(level3)));
+  await sleep(100);
+  check('matrix: a wrong tile shows NOT QUITE and costs a life', /NOT QUITE/.test(await js(`document.getElementById('mm-fx').textContent`)) && (await lives()) === 2);
+  check('matrix: the expected tile is hinted', await js(`document.querySelector('${tile(level3[1])}').classList.contains('is-hint')`));
+  check('matrix: a mistake resets the streak, keeps the score and the level', (await text('mm-streak')) === '—' && (await text('mm-score')) === scoreBeforeMistake && (await text('mm-level')) === '03');
+  await shot('24-matrix-mistake-390');
+  const replay = await readPattern();
+  check('matrix: after a mistake the same pattern is shown again', replay.join() === level3.join());
+  for (const t of replay) await click(tile(t));
+  check('matrix: the replayed level can be cleared', (await text('mm-level')) === '04');
+
+  // ----- two more mistakes: game over -----
+  for (let i = 0; i < 2; i++) {
+    const pattern = await readPattern();
+    await click(tile(wrongFor(pattern)));
+  }
+  const finalHud = await text('mm-score');
+  check('matrix: losing the last life ends the game', (await lives()) === 0 && (await js(`!document.getElementById('mm-over').hidden`)));
+  check('matrix: picks after game over are ignored', (await text('mm-score')) === finalHud);
+  await sleep(1600);
+  check('matrix: results screen is shown', await js(`!document.getElementById('screen-matrix-results').hidden && document.getElementById('screen-matrix-game').hidden`));
+  const accuracyShown = await text('mm-res-accuracy');
+  check('matrix: results show score, highest level, best streak and accuracy', (await text('mm-res-score')) === finalHud && (await text('mm-res-level')) === '3' && (await text('mm-res-streak')) === 'x2' && accuracyShown === `${Math.round(100 * 13 / 16)}%`, `${finalHud}, level ${await text('mm-res-level')}, ${await text('mm-res-streak')}, ${accuracyShown}`);
+  check('matrix: the first game is a NEW BEST', await js(`!document.getElementById('mm-new-best').hidden`));
+  check('matrix: results screen has no horizontal scroll', await noHorizontalScroll());
+  await shot('25-matrix-results-390');
+  const saved = JSON.parse(await js(`localStorage.getItem('mgh.memoryMatrix.best.v1')`));
+  check('matrix: best score, level and streak are saved as integers', saved.score === Number(finalHud.replace(/,/g, '')) && saved.level === 3 && saved.streak === 2, JSON.stringify(saved));
+  check('matrix: the other games\' bests are untouched', (await js(`JSON.stringify([localStorage.getItem('mgh.colorChaos.best.v1'), localStorage.getItem('mgh.neonReflex.best.v1')])`)) === otherBests);
+
+  // ----- play again, then HOME -----
+  await click('#mm-again');
+  await sleep(200);
+  check('matrix: Play Again starts fresh', (await text('mm-level')) === '01' && (await text('mm-score')) === '0' && (await text('mm-streak')) === '—' && (await lives()) === 3 && !(await js(`document.getElementById('mm-countdown').hidden`)));
+  for (let i = 0; i < 3; i++) {
+    const pattern = await readPattern();
+    await click(tile(wrongFor(pattern)));
+  }
+  await sleep(1600);
+  check('matrix: the second game also reaches the results', await js(`!document.getElementById('screen-matrix-results').hidden`) && (await text('mm-res-score')) === '0' && (await text('mm-res-accuracy')) === '0%');
+  await click('#mm-home');
+  await sleep(250);
+  check('matrix: HOME returns to the Mini Game Hub', await js(`!document.getElementById('screen-hub').hidden && ['screen-matrix-results', 'screen-matrix-home'].every((id) => document.getElementById(id).hidden) && location.hash === ''`));
+  check('matrix: the hub card shows the saved best score', (await js(`document.querySelector('[data-game="memory-matrix"] .game-best b').textContent`)) === saved.score.toLocaleString('en-US'));
+
+  // ----- persistence -----
+  await open(MATRIX_URL);
+  check('matrix: bests persist after refresh', (await text('mm-home-best')) === saved.score.toLocaleString('en-US') && (await text('mm-home-level')) === '3' && (await text('mm-home-streak')) === 'x2');
+  await js(`localStorage.setItem('mgh.memoryMatrix.best.v1', '{broken')`);
+  await open(MATRIX_URL);
+  check('matrix: a corrupted saved best does not break the page', (await text('mm-home-best')) === '0' && errors.length === 0);
+  await js(`localStorage.setItem('mgh.memoryMatrix.best.v1', ${JSON.stringify(JSON.stringify(saved))})`);
+
+  // ----- keyboard -----
+  await open(MATRIX_URL);
+  await click('#mm-play');
+  const keyPattern = await readPattern();
+  check('matrix: keyboard: a tile has focus on your turn', await js(`document.activeElement?.classList.contains('mm-tile')`));
+  for (const t of keyPattern) {
+    const from = Number(await js(`document.activeElement.dataset.tile`));
+    const [dr, dc] = [Math.floor(t / 4) - Math.floor(from / 4), (t % 4) - (from % 4)];
+    for (let i = 0; i < Math.abs(dr); i++) await key(dr > 0 ? 'ArrowDown' : 'ArrowUp');
+    for (let i = 0; i < Math.abs(dc); i++) await key(dc > 0 ? 'ArrowRight' : 'ArrowLeft');
+    await key('Enter');
+  }
+  await sleep(100);
+  check('matrix: keyboard: arrows + Enter repeat the pattern', (await text('mm-level')) === '02');
+  await click('#mm-quit');
+  check('matrix: Quit goes back to the Memory Matrix home', await js(`!document.getElementById('screen-matrix-home').hidden && !document.body.classList.contains('is-playing')`));
+  await click('#screen-matrix-home .back-link');
+  await sleep(200);
+  check('matrix: Back to Hub returns to the hub', await js(`!document.getElementById('screen-hub').hidden && document.getElementById('screen-matrix-home').hidden`));
+
+  // ----- reduced motion -----
+  await ws.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+  await open(MATRIX_URL);
+  check('matrix: device reduced-motion setting is respected', (await js('document.documentElement.dataset.motion')) === 'reduced');
+  await click('#mm-play');
+  const calm = await readPattern();
+  const scan = await js(`getComputedStyle(document.getElementById('mm-grid'), '::after').animationIterationCount`);
+  for (const t of calm) await click(tile(t));
+  check('matrix: the game still plays with reduced motion, without the looping scan', (await text('mm-level')) === '02' && scan === '1', `scan iterations: ${scan}`);
+  await click('#mm-quit');
+  await ws.send('Emulation.setEmulatedMedia', { features: [] });
+
+  // ----- layout at several sizes -----
+  for (const [w, h, mobile] of [[360, 640, true], [390, 844, true], [768, 1024, true], [1280, 800, false]]) {
+    await viewport(w, h, mobile);
+    await open(URL_ROOT);
+    await sleep(500); // let the cards finish sliding in
+    const hubOk = await noHorizontalScroll();
+    const cardsOk = await js(`(() => {
+      const boxes = ['color-chaos', 'neon-reflex', 'memory-matrix', 'laser-dodge', 'space-tap'].map((id) => document.querySelector('[data-game="' + id + '"]').getBoundingClientRect());
+      return boxes.every((a, i) => boxes.every((b, j) => i === j || a.right <= b.left + 1 || b.right <= a.left + 1 || a.bottom <= b.top + 1 || b.bottom <= a.top + 1));
+    })()`);
+    await shot(`26-hub-${w}`);
+    check(`matrix ${w}×${h}: hub has no horizontal scroll and no cards overlap`, hubOk && cardsOk);
+
+    await open(MATRIX_URL);
+    const homeOk = await noHorizontalScroll();
+    const homeFits = await js(`(() => { const b = document.getElementById('mm-play').getBoundingClientRect(); const stats = [...document.querySelectorAll('.matrix-stats b')].every((n) => n.scrollWidth <= n.clientWidth + 1); return b.height >= 44 && b.right <= innerWidth && stats; })()`);
+    await shot(`26-matrix-home-${w}`);
+    await click('#mm-play');
+    await sleep(3600);
+    await waitFor(`document.querySelectorAll('.mm-tile[data-state="lit"]').length > 0`);
+    const layout = await js(`(() => {
+      const grid = document.getElementById('mm-grid').getBoundingClientRect();
+      const hud = document.querySelector('.matrix-hud').getBoundingClientRect();
+      const quit = document.getElementById('mm-quit').getBoundingClientRect();
+      const tiles = [...document.querySelectorAll('.mm-tile')].map((t) => t.getBoundingClientRect());
+      const values = [...document.querySelectorAll('.matrix-hud b')].every((n) => n.scrollWidth <= n.clientWidth + 1);
+      return { minTile: Math.min(...tiles.map((t) => Math.min(t.width, t.height))), gridTop: grid.top, gridBottom: grid.bottom, gridRight: grid.right, hudBottom: hud.bottom, quitBottom: quit.bottom, quitH: quit.height, vw: innerWidth, vh: innerHeight, values };
+    })()`);
+    await shot(`27-matrix-game-${w}`);
+    check(`matrix ${w}×${h}: no horizontal scroll (home + game)`, homeOk && (await noHorizontalScroll()));
+    check(`matrix ${w}×${h}: Play button is large and the bests fit`, homeFits);
+    check(`matrix ${w}×${h}: HUD values fit`, layout.values);
+    check(`matrix ${w}×${h}: grid below the HUD and everything fits on screen`, layout.gridTop >= layout.hudBottom && layout.gridBottom <= layout.vh && layout.gridRight <= layout.vw && layout.quitBottom <= layout.vh && layout.quitH >= 44, `grid bottom ${Math.round(layout.gridBottom)}, quit bottom ${Math.round(layout.quitBottom)} / ${layout.vh}`);
+    check(`matrix ${w}×${h}: tiles are at least 44px`, layout.minTile >= 44, `${layout.minTile.toFixed(1)}px`);
+    await click('#mm-quit');
+  }
+}
+
+/** CSS selector for a grid tile. */
+function tile(index) { return `.mm-tile[data-tile="${index}"]`; }
+
+/** Tiles lit right now, in pattern order. */
+function litTiles() {
+  return js(`[...document.querySelectorAll('.mm-tile[data-state="lit"]')].sort((a, b) => a.textContent - b.textContent).map((t) => Number(t.dataset.tile))`);
+}
+
+/** Hearts still full. */
+function lives() { return js(`document.querySelectorAll('#mm-lives i:not(.is-lost)').length`); }
+
+/** A tile that is not in the pattern. */
+function wrongFor(pattern) { return [...Array(16).keys()].find((t) => !pattern.includes(t)); }
+
+/**
+ * Watch the next reveal and return the pattern once the grid unlocks for
+ * input. `onFirstLit` runs once, as soon as the first tile is lit.
+ */
+async function readPattern(onFirstLit) {
+  let pattern = [];
+  let firstSeen = false;
+  const until = Date.now() + 15000;
+  while (Date.now() < until) {
+    const state = await js(`({ locked: document.getElementById('mm-grid').classList.contains('is-locked'), over: !document.getElementById('mm-over').hidden })`);
+    if (!state.locked && !state.over && pattern.length > 0) return pattern;
+    const lit = await litTiles();
+    if (lit.length > pattern.length) pattern = lit;
+    if (lit.length > 0 && !firstSeen) {
+      firstSeen = true;
+      await onFirstLit?.();
+    }
+    await sleep(30);
+  }
+  throw new Error('The pattern never finished showing.');
+}
+
 /** The round number shown in the HUD, e.g. "04". */
 function reflexRound() { return text('nr-round'); }
 
@@ -518,7 +737,7 @@ async function mouse(x, y) {
 }
 
 async function key(name) {
-  const [code, windowsVirtualKeyCode] = { ArrowRight: ['ArrowRight', 39], Enter: ['Enter', 13], ' ': ['Space', 32] }[name];
+  const [code, windowsVirtualKeyCode] = { ArrowLeft: ['ArrowLeft', 37], ArrowUp: ['ArrowUp', 38], ArrowRight: ['ArrowRight', 39], ArrowDown: ['ArrowDown', 40], Enter: ['Enter', 13], ' ': ['Space', 32] }[name];
   await ws.send('Input.dispatchKeyEvent', { type: 'keyDown', key: name, code, windowsVirtualKeyCode });
   await ws.send('Input.dispatchKeyEvent', { type: 'keyUp', key: name, code, windowsVirtualKeyCode });
 }

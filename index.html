@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#05040f">
-    <meta name="description" content="Mini Game Hub: a neon arcade of quick browser games: Color Chaos and Neon Reflex.">
+    <meta name="description" content="Mini Game Hub: a neon arcade of quick browser games: Color Chaos, Neon Reflex and Memory Matrix.">
     <title>Mini Game Hub · Your Neon Arcade</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -184,6 +184,80 @@
 
             <button id="nr-again" type="button" class="btn btn-play"><span class="btn-icon" aria-hidden="true">▶</span> PLAY AGAIN</button>
             <button id="nr-home" type="button" class="btn btn-secondary" aria-label="Home: back to the Mini Game Hub">HOME</button>
+        </section>
+
+        <!-- Memory Matrix: home -->
+        <section id="screen-matrix-home" class="screen home matrix-home" aria-labelledby="mm-title" hidden>
+            <a class="back-link" href="#">← Back to Hub</a>
+            <h1 id="mm-title" class="logo matrix-logo" aria-label="Memory Matrix">
+                <span class="logo-line matrix-memory">MEMORY</span>
+                <span class="logo-line matrix-word">MATRIX</span>
+            </h1>
+            <p class="subtitle">Remember the light</p>
+            <p class="tagline">Watch. Remember. Repeat.</p>
+
+            <button id="mm-play" type="button" class="btn btn-play"><span class="btn-icon" aria-hidden="true">▶</span> PLAY NOW</button>
+
+            <div class="stat-row matrix-stats">
+                <div class="stat stat-main"><span>Best Score</span><b id="mm-home-best">0</b></div>
+                <div class="stat stat-holo"><span>Highest Level</span><b id="mm-home-level">—</b></div>
+                <div class="stat stat-alt"><span>Best Streak</span><b id="mm-home-streak">—</b></div>
+            </div>
+
+            <div class="how panel">
+                <div class="how-matrix" aria-hidden="true"><i></i><i class="on"></i><i></i><i></i><i></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
+                <p><span class="how-tag">How to play</span><strong>Watch the tiles light up, then tap them in the same order.</strong> Each level adds a tile. A mistake costs a life and shows the pattern again. 3 lives.</p>
+            </div>
+        </section>
+
+        <!-- Memory Matrix: game -->
+        <section id="screen-matrix-game" class="screen game matrix-game" aria-label="Memory Matrix game" hidden>
+            <header class="hud matrix-hud">
+                <div class="hud-box hud-score"><span>Score</span><b id="mm-score">0</b></div>
+                <div class="hud-box hud-level"><span>Level</span><b id="mm-level">01</b></div>
+                <div id="mm-streak-wrap" class="hud-box hud-combo"><span>Streak</span><b id="mm-streak">—</b></div>
+                <div class="hud-box hud-holo"><span>Best</span><b id="mm-best">—</b></div>
+            </header>
+            <div class="matrix-status">
+                <p id="mm-lives" class="matrix-lives" role="img" aria-label="Lives: 3 of 3"><i>❤️</i><i>❤️</i><i>❤️</i></p>
+                <p id="mm-phase" class="matrix-phase"></p>
+            </div>
+
+            <div class="matrix-wrap">
+                <div id="mm-grid" class="matrix-grid is-locked" role="group" aria-label="Memory grid. Watch the pattern, then pick the tiles in the same order." aria-disabled="true"></div>
+                <div id="mm-fx" class="matrix-fx" aria-hidden="true"></div>
+                <div id="mm-countdown" class="overlay countdown" role="status" aria-live="assertive" hidden><span id="mm-countdown-num">3</span></div>
+                <div id="mm-over" class="overlay timesup" role="status" hidden><span>MEMORY FAILED</span></div>
+            </div>
+            <p id="mm-live" class="sr-only" aria-live="polite"></p>
+
+            <div class="game-foot">
+                <p class="hint">Repeat the pattern in order</p>
+                <button id="mm-quit" type="button" class="btn btn-chip">✕ Quit</button>
+            </div>
+        </section>
+
+        <!-- Memory Matrix: results -->
+        <section id="screen-matrix-results" class="screen results matrix-results" aria-labelledby="mm-results-title" hidden>
+            <div id="mm-confetti" class="confetti" aria-hidden="true"></div>
+            <p class="eyebrow">Game Over</p>
+            <h2 id="mm-results-title" class="results-title">MEMORY COMPLETE</h2>
+            <p id="mm-new-best" class="new-best" role="status" hidden>🧠 NEW BEST!</p>
+
+            <div class="final">
+                <span>Final Score</span>
+                <b id="mm-res-score">0</b>
+            </div>
+
+            <dl class="res-grid">
+                <div class="stat stat-holo"><dt>Highest Level</dt><dd id="mm-res-level">0</dd></div>
+                <div class="stat stat-alt"><dt>Best Streak</dt><dd id="mm-res-streak">—</dd></div>
+                <div class="stat"><dt>Accuracy</dt><dd id="mm-res-accuracy">0%</dd></div>
+            </dl>
+            <p id="mm-res-record" class="res-record"></p>
+
+            <button id="mm-again" type="button" class="btn btn-play"><span class="btn-icon" aria-hidden="true">▶</span> PLAY AGAIN</button>
+            <button id="mm-home" type="button" class="btn btn-secondary" aria-label="Home: back to the Mini Game Hub">HOME</button>
         </section>
     </main>
 
