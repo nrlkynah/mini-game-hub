@@ -10,10 +10,12 @@
 // and the layout at several sizes. Then Memory Matrix: countdown, the pattern
 // showing and hiding, picks, levels, mistakes and lives, game over, results,
 // play again, Home back to the hub, keyboard, reduced motion and layout.
+// Then Space Tap: countdown, tapping targets, combo, accuracy, mines, empty
+// taps, the timer, results, play again, Home, keyboard, reduced motion, layout.
 //
 // Usage: npm run e2e            (set BROWSER=path/to/chrome to override)
-//        E2E_ONLY=color-chaos, neon-reflex or memory-matrix to run one game only
-// Takes about 3.5 minutes. Screenshots go to ./e2e-output/.
+//        E2E_ONLY=color-chaos, neon-reflex, memory-matrix or space-tap for one game
+// Takes about 5 minutes. Screenshots go to ./e2e-output/.
 
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
@@ -33,6 +35,7 @@ const URL_ROOT = `http://127.0.0.1:${PORT}/`;
 const GAME_URL = `${URL_ROOT}#color-chaos`;
 const REFLEX_URL = `${URL_ROOT}#neon-reflex`;
 const MATRIX_URL = `${URL_ROOT}#memory-matrix`;
+const SPACE_URL = `${URL_ROOT}#space-tap`;
 const ONLY = process.env.E2E_ONLY;
 const OUT = 'e2e-output';
 
@@ -62,6 +65,7 @@ try {
   await run();
 } catch (error) {
   console.error(error);
+  if (errors.length) console.error(`Page errors:\n${errors.join('\n')}`);
   results.push({ name: 'run without crashing', ok: false });
 } finally {
   ws?.close();
@@ -94,9 +98,9 @@ async function run() {
   check('the hub is shown first', await js(`!document.getElementById('screen-hub').hidden && document.getElementById('screen-home').hidden`));
   const cards = await js(`[...document.querySelectorAll('.game-card')].map((c) => ({ id: c.dataset.game, playable: c.classList.contains('is-playable'), status: c.querySelector('.game-status')?.textContent.trim() ?? '' }))`);
   check('the hub shows five game cards', cards.length === 5, cards.map((c) => c.id).join(', '));
-  check('Color Chaos, Neon Reflex and Memory Matrix are playable', cards.filter((c) => c.playable).map((c) => c.id).join() === 'color-chaos,neon-reflex,memory-matrix');
-  check('the other two are coming soon', cards.filter((c) => !c.playable).map((c) => `${c.id}:${c.status}`).join() === 'laser-dodge:🔒 Coming Soon,space-tap:🔒 Coming Soon', cards.filter((c) => !c.playable).map((c) => c.status).join(' | '));
-  check('only the three playable cards have a Play button', await js(`[...document.querySelectorAll('.game-card .btn-play')].map((b) => b.dataset.testid).join()`) === 'play-color-chaos,play-neon-reflex,play-memory-matrix');
+  check('Color Chaos, Neon Reflex, Memory Matrix and Space Tap are playable', cards.filter((c) => c.playable).map((c) => c.id).join() === 'color-chaos,neon-reflex,memory-matrix,space-tap');
+  check('Laser Dodge is still coming soon', cards.filter((c) => !c.playable).map((c) => `${c.id}:${c.status}`).join() === 'laser-dodge:🔒 Coming Soon', cards.filter((c) => !c.playable).map((c) => c.status).join(' | '));
+  check('only the four playable cards have a Play button', await js(`[...document.querySelectorAll('.game-card .btn-play')].map((b) => b.dataset.testid).join()`) === 'play-color-chaos,play-neon-reflex,play-memory-matrix,play-space-tap');
   check('the Color Chaos card shows best score 0', (await js(`document.querySelector('[data-game="color-chaos"] .game-best b').textContent`)) === '0');
   check('hub: no horizontal scrolling', await noHorizontalScroll());
   await shot('00-hub-390');
@@ -116,6 +120,9 @@ async function run() {
   }
   if (!ONLY || ONLY === 'memory-matrix') {
     await runMemoryMatrix();
+  }
+  if (!ONLY || ONLY === 'space-tap') {
+    await runSpaceTap();
   }
 
   check('no JavaScript errors in the console', errors.length === 0, errors.slice(0, 3).join(' | '));
@@ -633,6 +640,227 @@ async function runMemoryMatrix() {
   }
 }
 
+// ----- Space Tap -----
+
+async function runSpaceTap() {
+  await viewport(390, 844, true);
+  await open(URL_ROOT);
+  const otherBests = await js(`JSON.stringify(['colorChaos', 'neonReflex', 'memoryMatrix'].map((k) => localStorage.getItem('mgh.' + k + '.best.v1')))`);
+  check('space: the hub card shows best score 0', (await js(`document.querySelector('[data-game="space-tap"] .game-best b').textContent`)) === '0');
+  await click('[data-testid="play-space-tap"]');
+  await sleep(200);
+  check('space: Play opens Space Tap', await js(`location.hash === '#space-tap' && !document.getElementById('screen-space-home').hidden && document.getElementById('screen-hub').hidden`));
+  check('space: home shows best 0', (await text('st-home-best')) === '0' && (await text('st-home-accuracy')) === '—');
+  await shot('30-space-home-390');
+
+  // ----- countdown -----
+  await click('#st-play');
+  const countdown = [];
+  for (let i = 0; i < 4; i++) {
+    await sleep(i === 0 ? 150 : 800);
+    countdown.push(await text('st-countdown-num'));
+  }
+  check('space: countdown shows 3, 2, 1, GO!', countdown.join(',') === '3,2,1,GO!', countdown.join(','));
+  check('space: the arena is shown and locked during the countdown', await js(`(() => { const a = document.getElementById('st-field'); const r = a.getBoundingClientRect(); return a.classList.contains('is-locked') && r.width > 200 && r.height > 200; })()`));
+  check('space: HUD starts at 0, 30 s, no combo, 100% accuracy', (await text('st-score')) === '0' && (await text('st-timer')) === '30' && (await text('st-combo')) === '—' && (await text('st-accuracy')) === '100%');
+  await click('#st-field');
+  check('space: taps during the countdown do nothing', (await text('st-accuracy')) === '100%' && (await text('st-score')) === '0');
+  await waitFor(`!document.getElementById('st-field').classList.contains('is-locked')`);
+
+  // ----- targets: tap the real ones -----
+  const first = await waitForSpaceTarget(real);
+  check('space: a target appears inside the arena, below the HUD, large enough', first.inside && first.belowHud && first.size >= 44, `${Math.round(first.size)}px`);
+  await shot('31-space-target-390');
+  const scores = [];
+  for (let i = 0; i < 4; i++) {
+    const t = i === 0 ? first : await waitForSpaceTarget(real);
+    await mouse(t.x, t.y);
+    await sleep(60);
+    scores.push(Number((await text('st-score')).replace(/,/g, '')));
+  }
+  check('space: hitting targets adds points', scores.every((s, i) => s > (scores[i - 1] ?? 0)), scores.join(' → '));
+  check('space: hits in a row build the combo and multiplier', (await text('st-combo')) === 'x4' && (await text('st-multiplier')) === '×1.6', `${await text('st-combo')} ${await text('st-multiplier')}`);
+  check('space: accuracy stays 100% with only hits', (await text('st-accuracy')) === '100%');
+  check('space: a hit shows +points feedback', /^\+\d+(NICE!|BONUS!)/.test(await js(`[...document.querySelectorAll('#st-fx .st-float')].map((f) => f.textContent).join('|')`)));
+
+  // ----- an empty tap: accuracy drops, combo kept -----
+  const comboBefore = await text('st-combo');
+  await clickSpaceCorner();
+  await sleep(60);
+  check('space: an empty tap lowers accuracy but keeps the combo', (await text('st-accuracy')) === '80%' && (await text('st-combo')) === comboBefore, `${await text('st-accuracy')} ${await text('st-combo')}`);
+
+  // ----- a mine: MISS (every 7th target in the first phase is one) -----
+  let mine = null;
+  while (!mine) {
+    const t = await waitForSpaceTarget(() => true);
+    if (t.kind === 'mine') {
+      mine = t;
+    } else {
+      await mouse(t.x, t.y);
+      await sleep(40);
+    }
+  }
+  check('space: a mine (decoy) appears', Boolean(mine));
+  const beforeMine = { score: await text('st-score'), accuracy: parseInt(await text('st-accuracy'), 10) };
+  await mouse(mine.x, mine.y);
+  await sleep(60);
+  check('space: tapping a mine is a MISS: no points, combo reset, accuracy down',
+    (await text('st-score')) === beforeMine.score && (await text('st-combo')) === '—' && parseInt(await text('st-accuracy'), 10) < beforeMine.accuracy
+      && /MISS/.test(await js(`document.getElementById('st-fx').textContent`)));
+  await shot('32-space-miss-390');
+
+  // ----- the timer -----
+  const t1 = Number(await text('st-timer'));
+  await sleep(1100);
+  const t2 = Number(await text('st-timer'));
+  check('space: the timer counts down', t2 < t1 && t1 <= 30, `${t1} → ${t2}`);
+
+  // Keep playing (real targets only) until the end.
+  while ((await js(`document.getElementById('st-done').hidden`)) && Number(await text('st-timer')) > 0) {
+    const t = await waitForSpaceTarget(real, 1500).catch(() => null);
+    if (t) {
+      await mouse(t.x, t.y);
+      await sleep(30);
+    }
+  }
+  await waitFor(`!document.getElementById('st-done').hidden`, 3000);
+  const finalHud = await text('st-score');
+  const finalAccuracy = await text('st-accuracy');
+  check('space: the timer reaches exactly 0 and TIME\'S UP shows', (await text('st-timer')) === '0' && (await js(`!document.getElementById('st-done').hidden`)));
+  check('space: the arena is cleared and locked at the end', await js(`document.querySelectorAll('#st-field .st-target:not(.is-gone)').length === 0 && document.getElementById('st-field').classList.contains('is-locked')`));
+  await shot('33-space-hard-phase-390');
+
+  // ----- results -----
+  await sleep(1400);
+  check('space: results screen is shown', await js(`!document.getElementById('screen-space-results').hidden && document.getElementById('screen-space-game').hidden`));
+  const hits = Number((await text('st-res-hits')).replace(/,/g, ''));
+  check('space: results show score, targets hit, accuracy, best combo and best score',
+    (await text('st-res-score')) === finalHud && hits > 10 && (await text('st-res-accuracy')) === finalAccuracy && /^x\d+$/.test(await text('st-res-combo')) && (await text('st-res-best')) === finalHud,
+    `${finalHud}, ${hits} hits, ${finalAccuracy}, ${await text('st-res-combo')}`);
+  check('space: the first run is a NEW BEST', await js(`!document.getElementById('st-new-best').hidden`));
+  check('space: results screen has no horizontal scroll', await noHorizontalScroll());
+  await shot('34-space-results-390');
+  const saved = JSON.parse(await js(`localStorage.getItem('mgh.spaceTap.best.v1')`));
+  check('space: best score, combo and accuracy are saved as integers', saved.score === Number(finalHud.replace(/,/g, '')) && Number.isSafeInteger(saved.combo) && saved.combo > 0 && saved.accuracy === parseInt(finalAccuracy, 10), JSON.stringify(saved));
+  check('space: the other games\' bests are untouched', (await js(`JSON.stringify(['colorChaos', 'neonReflex', 'memoryMatrix'].map((k) => localStorage.getItem('mgh.' + k + '.best.v1')))`)) === otherBests);
+
+  // ----- play again (an idle run), then HOME -----
+  await click('#st-again');
+  await sleep(200);
+  check('space: Play Again starts fresh', (await text('st-score')) === '0' && (await text('st-timer')) === '30' && (await text('st-combo')) === '—' && (await text('st-accuracy')) === '100%' && !(await js(`document.getElementById('st-countdown').hidden`)));
+  await waitFor(`!document.getElementById('screen-space-results').hidden`, 40000);
+  check('space: an idle run ends with 0 points and no NaN', (await text('st-res-score')) === '0' && (await text('st-res-accuracy')) === '100%' && (await text('st-res-hits')) === '0');
+  await click('#st-home');
+  await sleep(250);
+  check('space: HOME returns to the Mini Game Hub', await js(`!document.getElementById('screen-hub').hidden && ['screen-space-results', 'screen-space-home'].every((id) => document.getElementById(id).hidden) && location.hash === ''`));
+  check('space: the hub card shows the saved best score', (await js(`document.querySelector('[data-game="space-tap"] .game-best b').textContent`)) === saved.score.toLocaleString('en-US'));
+
+  // ----- persistence -----
+  await open(SPACE_URL);
+  check('space: bests persist after refresh', (await text('st-home-best')) === saved.score.toLocaleString('en-US') && (await text('st-home-combo')) === `x${saved.combo}` && (await text('st-home-accuracy')) === `${saved.accuracy}%`);
+  await js(`localStorage.setItem('mgh.spaceTap.best.v1', '{broken')`);
+  await open(SPACE_URL);
+  check('space: a corrupted saved best does not break the page', (await text('st-home-best')) === '0' && errors.length === 0);
+  await js(`localStorage.setItem('mgh.spaceTap.best.v1', ${JSON.stringify(JSON.stringify(saved))})`);
+
+  // ----- keyboard -----
+  await open(SPACE_URL);
+  await click('#st-play');
+  const keyed = await waitForSpaceTarget(real, 6000);
+  check('space: keyboard: the arena has focus', await js(`document.activeElement?.id === 'st-field'`));
+  await key(String(keyed.slot));
+  await sleep(60);
+  check('space: keyboard: the number on a target taps it', Number((await text('st-score')).replace(/,/g, '')) > 0, `key ${keyed.slot}`);
+  await click('#st-quit');
+  check('space: Quit goes back to the Space Tap home', await js(`!document.getElementById('screen-space-home').hidden && !document.body.classList.contains('is-playing')`));
+  await click('#screen-space-home .back-link');
+  await sleep(200);
+  check('space: Back to Hub returns to the hub', await js(`!document.getElementById('screen-hub').hidden && document.getElementById('screen-space-home').hidden`));
+
+  // ----- reduced motion -----
+  await ws.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+  await open(SPACE_URL);
+  check('space: device reduced-motion setting is respected', (await js('document.documentElement.dataset.motion')) === 'reduced');
+  await click('#st-play');
+  const calm = await waitForSpaceTarget(real, 6000);
+  const drift = await js(`getComputedStyle(document.querySelector('.space-stars')).animationIterationCount`);
+  await mouse(calm.x, calm.y);
+  await sleep(60);
+  check('space: the game still plays with reduced motion, without the drifting stars', Number((await text('st-score')).replace(/,/g, '')) > 0 && drift === '1', `drift iterations: ${drift}`);
+  await click('#st-quit');
+  await ws.send('Emulation.setEmulatedMedia', { features: [] });
+
+  // ----- layout at several sizes -----
+  for (const [w, h, mobile] of [[360, 640, true], [390, 844, true], [768, 1024, true], [1280, 800, false]]) {
+    await viewport(w, h, mobile);
+    await open(URL_ROOT);
+    await sleep(500); // let the cards finish sliding in
+    const hubOk = await noHorizontalScroll();
+    const cardsOk = await js(`(() => {
+      const boxes = [...document.querySelectorAll('.game-card')].map((c) => c.getBoundingClientRect());
+      return boxes.length === 5 && boxes.every((a, i) => boxes.every((b, j) => i === j || a.right <= b.left + 1 || b.right <= a.left + 1 || a.bottom <= b.top + 1 || b.bottom <= a.top + 1));
+    })()`);
+    await shot(`35-hub-${w}`);
+    check(`space ${w}×${h}: hub has no horizontal scroll and no cards overlap`, hubOk && cardsOk);
+
+    await open(SPACE_URL);
+    const homeOk = await noHorizontalScroll();
+    const homeFits = await js(`(() => { const b = document.getElementById('st-play').getBoundingClientRect(); const stats = [...document.querySelectorAll('.space-stats b')].every((n) => n.scrollWidth <= n.clientWidth + 1); return b.height >= 44 && b.right <= innerWidth && stats; })()`);
+    await shot(`35-space-home-${w}`);
+    await click('#st-play');
+    const shown = await waitForSpaceTarget(() => true, 6000);
+    const layout = await js(`(() => {
+      const hud = document.querySelector('.space-hud').getBoundingClientRect();
+      const arena = document.getElementById('st-field').getBoundingClientRect();
+      const quit = document.getElementById('st-quit').getBoundingClientRect();
+      const values = [...document.querySelectorAll('.space-hud b')].every((n) => n.scrollWidth <= n.clientWidth + 1);
+      return { arenaW: arena.width, arenaH: arena.height, arenaTop: arena.top, hudBottom: hud.bottom, quitBottom: quit.bottom, quitH: quit.height, vh: innerHeight, values };
+    })()`);
+    await shot(`36-space-game-${w}`);
+    check(`space ${w}×${h}: no horizontal scroll (home + game)`, homeOk && (await noHorizontalScroll()));
+    check(`space ${w}×${h}: Play button is large and the bests fit`, homeFits);
+    check(`space ${w}×${h}: HUD values fit`, layout.values);
+    check(`space ${w}×${h}: arena below the HUD, big, and everything on screen`, layout.arenaTop >= layout.hudBottom && layout.arenaH >= 240 && layout.quitBottom <= layout.vh && layout.quitH >= 44, `arena ${Math.round(layout.arenaW)}×${Math.round(layout.arenaH)}, quit bottom ${Math.round(layout.quitBottom)} / ${layout.vh}`);
+    check(`space ${w}×${h}: targets inside the arena and at least 44px`, shown.inside && shown.belowHud && shown.size >= 44, `${Math.round(shown.size)}px`);
+    await click('#st-quit');
+  }
+}
+
+/** A star, planet or comet (not a mine). */
+function real(t) { return t.kind !== 'mine'; }
+
+/**
+ * Wait until a live target matching `wanted` is on screen, with enough life
+ * left to tap it; returns its centre, size, kind, slot and where it sits.
+ */
+async function waitForSpaceTarget(wanted, timeout = 4000) {
+  const until = Date.now() + timeout;
+  while (Date.now() < until) {
+    const all = await js(`(() => {
+      const arena = document.getElementById('st-field').getBoundingClientRect();
+      const hud = document.querySelector('.space-hud').getBoundingClientRect();
+      return [...document.querySelectorAll('#st-field .st-target:not(.is-gone)')].map((t) => {
+        const r = t.getBoundingClientRect();
+        const size = t.offsetWidth; // its laid-out size; the box may still be scaling in
+        const x = r.x + r.width / 2, y = r.y + r.height / 2, half = size / 2;
+        const inside = x - half >= arena.left - 1 && x + half <= arena.right + 1 && y - half >= arena.top - 6 && y + half <= arena.bottom + 1;
+        return { x, y, size, kind: t.dataset.kind, slot: Number(t.querySelector('.st-key').textContent), inside, belowHud: y - half >= hud.bottom };
+      });
+    })()`);
+    const found = all.find(wanted);
+    if (found) return found;
+    await sleep(15);
+  }
+  const seen = await js(`JSON.stringify({ targets: document.querySelectorAll('#st-field .st-target').length, gone: document.querySelectorAll('#st-field .st-target.is-gone').length, timer: document.getElementById('st-timer').textContent, locked: document.getElementById('st-field').classList.contains('is-locked'), screen: [...document.querySelectorAll('.screen')].filter((s) => !s.hidden).map((s) => s.id) })`);
+  throw new Error(`No matching Space Tap target appeared. Page: ${seen}`);
+}
+
+/** A tap in a corner of the arena, where targets never appear. */
+async function clickSpaceCorner() {
+  const p = await js(`(() => { const r = document.getElementById('st-field').getBoundingClientRect(); return { x: r.left + 6, y: r.bottom - 6 }; })()`);
+  await mouse(p.x, p.y);
+}
+
 /** CSS selector for a grid tile. */
 function tile(index) { return `.mm-tile[data-tile="${index}"]`; }
 
@@ -737,7 +965,9 @@ async function mouse(x, y) {
 }
 
 async function key(name) {
-  const [code, windowsVirtualKeyCode] = { ArrowLeft: ['ArrowLeft', 37], ArrowUp: ['ArrowUp', 38], ArrowRight: ['ArrowRight', 39], ArrowDown: ['ArrowDown', 40], Enter: ['Enter', 13], ' ': ['Space', 32] }[name];
+  const [code, windowsVirtualKeyCode] = /^\d$/.test(name)
+    ? [`Digit${name}`, 48 + Number(name)]
+    : { ArrowLeft: ['ArrowLeft', 37], ArrowUp: ['ArrowUp', 38], ArrowRight: ['ArrowRight', 39], ArrowDown: ['ArrowDown', 40], Enter: ['Enter', 13], ' ': ['Space', 32] }[name];
   await ws.send('Input.dispatchKeyEvent', { type: 'keyDown', key: name, code, windowsVirtualKeyCode });
   await ws.send('Input.dispatchKeyEvent', { type: 'keyUp', key: name, code, windowsVirtualKeyCode });
 }

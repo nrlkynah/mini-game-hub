@@ -8,8 +8,8 @@ export const GAMES = [
   { id: 'color-chaos', icon: '🌈', title: 'Color Chaos', tagline: '60 Second Challenge', status: 'playable', accent: 'cyan' },
   { id: 'neon-reflex', icon: '⚡', title: 'Neon Reflex', tagline: 'How fast are you?', status: 'playable', accent: 'magenta' },
   { id: 'memory-matrix', icon: '🧠', title: 'Memory Matrix', tagline: 'Remember the light', status: 'playable', accent: 'purple' },
+  { id: 'space-tap', icon: '🚀', title: 'Space Tap', tagline: 'Tap. Combo. Survive.', status: 'playable', accent: 'lime' },
   { id: 'laser-dodge', icon: '💥', title: 'Laser Dodge', tagline: 'Survive the beam', status: 'soon', accent: 'blue' },
-  { id: 'space-tap', icon: '🚀', title: 'Space Tap', tagline: 'How fast can you tap?', status: 'soon', accent: 'lime' },
 ];
 
 export const STATUS_LABELS = { playable: 'Playable', next: 'Coming Next', soon: 'Coming Soon' };

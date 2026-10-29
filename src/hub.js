@@ -43,6 +43,8 @@ export function createHub(root, players) {
   if (locked.length % 2 === 1) {
     locked[locked.length - 1].classList.add('is-wide');
   }
+  // The wide-screen layout depends on how many games are playable (see styles.css).
+  root.dataset.playable = String(bests.size);
 
   /** Show the latest best score on each playable card. */
   function refresh() {

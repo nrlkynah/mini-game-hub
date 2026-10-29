@@ -53,6 +53,26 @@ reveal gets a little faster (650 ms per tile, −25 ms per level, never below
 pattern again; nothing is taken off the score. Tapping a tile already picked
 is ignored. Arrow keys plus Enter/Space work on the grid.
 
+## Space Tap: tap, combo, survive
+
+30 seconds. Stars, planets and comets pop up around the arena and fade
+after a moment; tap them first. Mines (💣) are decoys: never tap them.
+
+| Target | Points |
+|---|---|
+| ⭐ star, 🪐 planet | 100 |
+| ☄️ comet (bonus) | 250 |
+| 💣 mine | MISS: no points, combo lost |
+
+Points × combo multiplier: x1 1.0, x2 1.2, x3 1.4, x4 1.6, x5 and up 2.0.
+A mine or a target left to fade ("TOO SLOW") resets the combo. A tap on
+empty space only lowers accuracy. Accuracy = hits / taps (100% with no taps).
+
+Every 10 seconds it gets harder (easy → medium → hard): targets spawn faster
+and live shorter, every 7th / 5th / 4th target is a mine, and every 6th / 8th
+/ 10th is a comet. Decoys and comets follow that fixed rhythm, not luck.
+Keyboard: the number shown on a target (1–4) taps it.
+
 ## Run it
 
 ```sh
@@ -66,8 +86,8 @@ The page uses ES modules, so open it through the server (not as a `file://`).
 ```sh
 npm test           # unit tests for the game logic and saved data (node --test)
 npm run check      # syntax check of every file + HTML ids used by the code
-npm run e2e        # plays all three games in headless Edge/Chrome (~4 min)
-                   # E2E_ONLY=color-chaos, neon-reflex or memory-matrix for one game
+npm run e2e        # plays all four games in headless Edge/Chrome (~5 min)
+                   # E2E_ONLY=color-chaos, neon-reflex, memory-matrix or space-tap for one game
 ```
 
 `npm run e2e` writes screenshots to `e2e-output/`. Set `BROWSER=/path/to/chrome`
@@ -93,20 +113,28 @@ src/
     pattern.js   pattern generation, reveal timing, checking a pick
     scoring.js   level points, streak and quick bonus, accuracy
     engine.js    createMemoryGame / tick(state, now) / select(state, { tile, at })
+  space/       Space Tap game logic, no DOM
+    config.js    run length, difficulty phases, target kinds, multipliers
+    targets.js   phase at a moment, next target kind, free spot, keyboard slot
+    scoring.js   points × multiplier, accuracy
+    engine.js    createSpaceGame / tick(state, now) / tap(state, { at, targetId })
   app/         browser side
     boardView.js   draws the Color Chaos board, pointer + keyboard input, effects
     arenaView.js   draws the Neon Reflex arena, target and effects
     matrixView.js  draws the Memory Matrix grid, pointer + keyboard input, effects
+    spaceView.js   draws the Space Tap arena, targets and effects
     storage.js     localStorage (Color Chaos best, sound, motion), validated
     reflexStorage.js  localStorage (Neon Reflex bests), validated
     matrixStorage.js  localStorage (Memory Matrix bests), validated
+    spaceStorage.js   localStorage (Space Tap bests), validated
     audio.js       sound effects made with Web Audio (no audio files)
   games.js     the hub's game registry (status: playable / soon)
   hub.js       the hub's game cards
   colorChaos.js  Color Chaos screens, the round's clock, wiring
   neonReflex.js  Neon Reflex screens, the clock, wiring
   memoryMatrix.js  Memory Matrix screens, the clock, wiring
-  main.js      routes #color-chaos / #neon-reflex / #memory-matrix / the hub
+  spaceTap.js  Space Tap screens, the run's clock, wiring
+  main.js      routes #color-chaos / #neon-reflex / #memory-matrix / #space-tap / the hub
   styles.css
 tests/         node --test unit tests
 scripts/       dev server, checks, browser end-to-end test
@@ -117,7 +145,8 @@ scripts/       dev server, checks, browser end-to-end test
   round can be replayed exactly.
 - **Saved data:** `localStorage` keys `mgh.colorChaos.best.v1`,
   `mgh.neonReflex.best.v1` (score, fastest reaction, combo),
-  `mgh.memoryMatrix.best.v1` (score, highest level, streak), `mgh.sound`
+  `mgh.memoryMatrix.best.v1` (score, highest level, streak),
+  `mgh.spaceTap.best.v1` (score, combo, accuracy), `mgh.sound`
   and `mgh.motion`. Bad or tampered values fall back to defaults.
 - **Sound:** nothing is created until the player presses Play, and sound
   can be turned off.

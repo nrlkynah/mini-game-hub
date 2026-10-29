@@ -1,15 +1,17 @@
 // Mini Game Hub: shows the hub or one game, based on the URL hash.
 //   (no hash) → hub     #color-chaos → Color Chaos
 //   #neon-reflex → Neon Reflex     #memory-matrix → Memory Matrix
+//   #space-tap → Space Tap
 // Links to "#" go back to the hub; unknown hashes do too.
 
 import * as colorChaos from './colorChaos.js';
 import * as memoryMatrix from './memoryMatrix.js';
 import * as neonReflex from './neonReflex.js';
+import * as spaceTap from './spaceTap.js';
 import { createHub } from './hub.js';
 
 /** Playable games by registry id (see src/games.js). */
-const players = { 'color-chaos': colorChaos, 'neon-reflex': neonReflex, 'memory-matrix': memoryMatrix };
+const players = { 'color-chaos': colorChaos, 'neon-reflex': neonReflex, 'memory-matrix': memoryMatrix, 'space-tap': spaceTap };
 
 const hubScreen = document.getElementById('screen-hub');
 const hub = createHub(document.getElementById('hub-games'), players);

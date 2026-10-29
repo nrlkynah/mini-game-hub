@@ -451,6 +451,8 @@ button { font: inherit; color: inherit; }
     .game-card.is-playable .game-title { font-size: 1.6rem; }
     .game-card.is-locked { grid-column: span 3; justify-content: center; }
     .game-card.is-wide { grid-column: 1 / -1; }
+    /* Four playable games: two by two */
+    .game-grid[data-playable="4"] .game-card.is-playable { grid-column: span 3; }
 }
 
 /* ---------- home: title screen ---------- */
@@ -903,9 +905,9 @@ button { font: inherit; color: inherit; }
 .reflex-bolt { display: inline-block; margin-right: 0.08em; font-size: 0.62em; vertical-align: 0.18em; filter: drop-shadow(0 0 10px rgba(255, 224, 58, 0.9)); }
 
 .stat-fast { --accent: var(--lime); border-color: rgba(166, 255, 60, 0.28); }
-.reflex-stats, .matrix-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.reflex-stats .stat, .matrix-stats .stat { padding: 10px 6px 8px; }
-.reflex-stats .stat b, .reflex-stats .stat-main b, .matrix-stats .stat b, .matrix-stats .stat-main b { font-size: clamp(1rem, 4.6vw, 1.6rem); white-space: nowrap; }
+.reflex-stats, .matrix-stats, .space-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.reflex-stats .stat, .matrix-stats .stat, .space-stats .stat { padding: 10px 6px 8px; }
+.reflex-stats .stat b, .reflex-stats .stat-main b, .matrix-stats .stat b, .matrix-stats .stat-main b, .space-stats .stat b, .space-stats .stat-main b { font-size: clamp(1rem, 4.6vw, 1.6rem); white-space: nowrap; }
 
 /* A small target as the "how to play" picture */
 .how-target {
@@ -926,10 +928,10 @@ button { font: inherit; color: inherit; }
 .reflex-game { min-height: 0; }
 .reflex-game .game-foot { flex-shrink: 0; }
 
-.reflex-hud, .matrix-hud { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; flex-shrink: 0; }
-.reflex-hud .hud-box, .matrix-hud .hud-box { padding: 7px 4px 6px; }
-.reflex-hud .hud-box span, .matrix-hud .hud-box span { font-size: 0.56rem; letter-spacing: 0.2em; }
-.reflex-hud .hud-box b, .matrix-hud .hud-box b { font-size: clamp(0.95rem, 4.4vw, 1.5rem); }
+.reflex-hud, .matrix-hud, .space-hud { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; flex-shrink: 0; }
+.reflex-hud .hud-box, .matrix-hud .hud-box, .space-hud .hud-box { padding: 7px 4px 6px; }
+.reflex-hud .hud-box span, .matrix-hud .hud-box span, .space-hud .hud-box span { font-size: 0.56rem; letter-spacing: 0.2em; }
+.reflex-hud .hud-box b, .matrix-hud .hud-box b, .space-hud .hud-box b { font-size: clamp(0.95rem, 4.4vw, 1.5rem); }
 .reflex-hud b em { font-style: normal; }
 .reflex-hud b small { font-size: 0.58em; opacity: 0.7; }
 .hud-round { --accent: var(--purple); }
@@ -1324,6 +1326,256 @@ button { font: inherit; color: inherit; }
 .matrix-results .results-title { font-size: clamp(1.7rem, 8.5vw, 3rem); line-height: 1.1; }
 .matrix-results .res-grid dd { white-space: nowrap; }
 
+/* ==========================================================================
+   Space Tap: same arcade, its own identity. Deep space with drifting stars
+   and a nebula; glowing stars, planets and comets; red mines to avoid.
+   ========================================================================== */
+
+/* ---------- title screen ---------- */
+
+.space-logo { font-size: clamp(2.8rem, 15vw, 5.8rem); }
+.space-word {
+    color: #fff6d6;
+    text-shadow: 0 0 4px #ffe03a, 0 0 14px #ffb800, 0 0 34px rgba(255, 224, 58, 0.55), 0 0 70px rgba(255, 43, 214, 0.35);
+}
+.space-tap {
+    color: #eaffd4;
+    text-shadow: 0 0 4px var(--lime), 0 0 14px var(--lime), 0 0 34px rgba(166, 255, 60, 0.6), 0 0 70px rgba(34, 241, 255, 0.4);
+    animation: flicker 4.8s linear infinite;
+}
+.space-rocket { display: inline-block; margin-right: 0.1em; font-size: 0.6em; vertical-align: 0.2em; filter: drop-shadow(0 0 10px rgba(255, 140, 60, 0.8)); }
+
+.space-how { flex-direction: column; align-items: stretch; }
+.space-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; margin: 0; padding: 0; list-style: none; font-size: 0.85rem; color: var(--muted); }
+.space-legend li { display: flex; align-items: center; gap: 6px; }
+.space-legend b { margin-left: auto; font-family: var(--font-display); font-size: 0.72rem; color: var(--lime); }
+.space-legend .is-mine b { color: var(--danger); }
+
+/* ---------- game: full-height screen, wider on desktop ---------- */
+
+.is-space-game .app { max-width: 980px; height: 100dvh; }
+.space-game { min-height: 0; }
+.space-game .game-foot, .space-game .timebar { flex-shrink: 0; }
+.space-hud b em { font-style: normal; }
+.space-hud b small { margin-left: 3px; font-size: 0.5em; opacity: 0.75; }
+.space-hud .hud-timer { min-width: 0; border-width: 1px; }
+.space-hud .hud-timer b { font-size: clamp(1.1rem, 5.4vw, 1.7rem); line-height: 1.3; }
+
+/* ---------- game: the arena ---------- */
+
+.space-wrap {
+    /* Target size, and how far target centres stay from the arena's edges */
+    --t: clamp(60px, 13vmin, 96px);
+    --edge-pad: calc(var(--t) / 2 + 10px);
+    position: relative;
+    flex: 1;
+    width: 100%;
+    min-height: 240px;
+}
+.space-wrap::after {
+    --b: linear-gradient(var(--lime), var(--lime));
+    content: '';
+    position: absolute;
+    inset: -5px;
+    pointer-events: none;
+    background:
+        var(--b) top left / 22px 2px no-repeat, var(--b) top left / 2px 22px no-repeat,
+        var(--b) top right / 22px 2px no-repeat, var(--b) top right / 2px 22px no-repeat,
+        var(--b) bottom left / 22px 2px no-repeat, var(--b) bottom left / 2px 22px no-repeat,
+        var(--b) bottom right / 22px 2px no-repeat, var(--b) bottom right / 2px 22px no-repeat;
+    filter: drop-shadow(0 0 4px var(--lime));
+}
+
+.space-arena {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 18px;
+    background:
+        radial-gradient(45% 35% at 22% 28%, rgba(255, 43, 214, 0.2), transparent 70%),
+        radial-gradient(50% 40% at 80% 72%, rgba(59, 130, 255, 0.22), transparent 70%),
+        radial-gradient(30% 25% at 70% 20%, rgba(166, 255, 60, 0.08), transparent 70%),
+        linear-gradient(rgba(157, 92, 255, 0.05) 1px, transparent 1px) 50% 50% / 48px 48px,
+        linear-gradient(90deg, rgba(157, 92, 255, 0.05) 1px, transparent 1px) 50% 50% / 48px 48px,
+        linear-gradient(180deg, #070418, #020109);
+    border: 1px solid rgba(166, 255, 60, 0.4);
+    box-shadow: 0 0 0 1px rgba(157, 92, 255, 0.25), 0 0 26px rgba(166, 255, 60, 0.15), 0 0 70px rgba(157, 92, 255, 0.18), inset 0 0 50px rgba(0, 0, 0, 0.5);
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.space-arena.is-locked { cursor: default; }
+.space-arena:focus { outline: none; }
+.space-arena:focus-visible { outline: 2px solid var(--lime); outline-offset: 4px; }
+
+/* Two layers of stars drifting past at different speeds */
+.space-stars {
+    position: absolute;
+    inset: 0 -240px 0 0;
+    background-image:
+        radial-gradient(circle at 10% 20%, #fff 0 1px, transparent 1.6px),
+        radial-gradient(circle at 35% 70%, rgba(255, 255, 255, 0.8) 0 1px, transparent 1.6px),
+        radial-gradient(circle at 60% 35%, #c8fbff 0 1.2px, transparent 2px),
+        radial-gradient(circle at 82% 85%, #fff 0 1px, transparent 1.6px),
+        radial-gradient(circle at 90% 12%, #ffd6f6 0 1.2px, transparent 2px);
+    background-size: 240px 240px;
+    opacity: 0.8;
+    animation: starfield 22s linear infinite;
+    pointer-events: none;
+}
+.space-stars-far { background-size: 150px 150px; opacity: 0.4; inset: 0 -150px 0 0; animation-duration: 40s; animation-name: starfield-far; }
+@keyframes starfield { to { transform: translateX(-240px); } }
+@keyframes starfield-far { to { transform: translateX(-150px); } }
+
+.space-phase {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    translate: -50% 0;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.58rem;
+    letter-spacing: 0.26em;
+    color: var(--lime);
+    border: 1px solid rgba(166, 255, 60, 0.4);
+    background: rgba(2, 1, 9, 0.6);
+    pointer-events: none;
+}
+.space-phase:empty { display: none; }
+.space-phase[data-phase="medium"] { color: #ffe03a; border-color: rgba(255, 224, 58, 0.45); }
+.space-phase[data-phase="hard"] { color: var(--danger); border-color: rgba(255, 61, 113, 0.5); }
+
+/* Targets and effects share one way of placing things: x, y in [0, 1) across the arena, inset by --edge-pad. */
+.st-target, .st-at {
+    position: absolute;
+    left: calc(var(--edge-pad) + var(--x) * (100% - 2 * var(--edge-pad)));
+    top: calc(var(--edge-pad) + var(--y) * (100% - 2 * var(--edge-pad)));
+    translate: -50% -50%;
+}
+
+[data-kind="star"] { --glow: #ffe03a; }
+[data-kind="planet"] { --glow: var(--purple); }
+[data-kind="comet"] { --glow: var(--lime); }
+[data-kind="mine"] { --glow: var(--danger); }
+
+.st-target {
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: var(--t);
+    height: var(--t);
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--glow) 30%, transparent), color-mix(in srgb, var(--glow) 8%, transparent) 62%, transparent 72%);
+    cursor: pointer;
+    touch-action: none;
+    animation: st-in 0.2s cubic-bezier(.2,.9,.3,1.4), st-bob 1.6s ease-in-out 0.2s infinite alternate;
+}
+.st-target span { pointer-events: none; }
+@keyframes st-in { from { transform: scale(0.2); opacity: 0; } }
+@keyframes st-bob { to { transform: translateY(-4px); } }
+
+/* A ring that runs down over the target's life */
+.st-life {
+    position: absolute;
+    inset: 4%;
+    border-radius: 50%;
+    border: 3px solid var(--glow);
+    box-shadow: 0 0 12px var(--glow), inset 0 0 10px color-mix(in srgb, var(--glow) 50%, transparent);
+    mask: conic-gradient(#000 var(--left, 100%), transparent 0);
+    animation: st-life var(--life) linear forwards;
+}
+@property --left { syntax: '<percentage>'; inherits: false; initial-value: 100%; }
+@keyframes st-life { to { --left: 0%; } }
+
+.st-icon { position: relative; font-size: calc(var(--t) * 0.46); line-height: 1; filter: drop-shadow(0 0 8px var(--glow)); }
+.st-key {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 0.66rem;
+    color: #07041a;
+    background: var(--glow);
+    box-shadow: 0 0 8px var(--glow);
+}
+.st-tag {
+    position: absolute;
+    top: -10px;
+    padding: 1px 6px;
+    border-radius: 5px;
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 0.5rem;
+    letter-spacing: 0.16em;
+    color: #0a1a00;
+    background: var(--lime);
+    box-shadow: 0 0 10px var(--lime);
+}
+/* Comets leave a trail */
+.st-target[data-kind="comet"]::before {
+    content: '';
+    position: absolute;
+    right: 70%;
+    top: 50%;
+    width: 90%;
+    height: 10px;
+    translate: 0 -50%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, rgba(166, 255, 60, 0.7));
+    filter: blur(2px);
+    pointer-events: none;
+}
+/* Mines look dangerous: dashed red ring and a pulse */
+.st-target[data-kind="mine"] .st-life { border-style: dashed; }
+.st-target[data-kind="mine"] { animation: st-in 0.2s cubic-bezier(.2,.9,.3,1.4), st-danger 0.7s ease-in-out 0.2s infinite alternate; }
+@keyframes st-danger { to { filter: brightness(1.35); } }
+@media (hover: hover) {
+    .st-target:hover { filter: brightness(1.2); }
+}
+
+.space-fx { position: absolute; inset: 0; z-index: 2; overflow: hidden; border-radius: 18px; pointer-events: none; }
+
+[data-tone="hit"] { --tone: var(--cyan); }
+[data-tone="bonus"] { --tone: var(--lime); }
+[data-tone="miss"] { --tone: var(--danger); }
+[data-tone="slow"] { --tone: var(--purple); }
+
+.st-burst { width: var(--t); height: var(--t); border-radius: 50%; border: 3px solid var(--tone); box-shadow: 0 0 18px var(--tone), inset 0 0 14px var(--tone); }
+.st-spark { width: 16px; height: 3px; margin-left: 8px; border-radius: 999px; translate: 0 -50%; transform-origin: -8px 50%; background: linear-gradient(90deg, transparent, #fff); box-shadow: 0 0 8px var(--tone); }
+.st-float {
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: var(--font-display);
+    font-weight: 900;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+.st-float b { font-size: clamp(1.15rem, 5vw, 1.6rem); color: #fff; text-shadow: 0 0 6px var(--tone), 0 0 18px var(--tone), 0 2px 0 rgba(0, 0, 0, 0.6); }
+.st-float small { font-size: 0.66rem; letter-spacing: 0.24em; color: var(--tone); text-shadow: 0 0 10px var(--tone); }
+.st-ripple { position: absolute; width: 40px; height: 40px; translate: -50% -50%; border-radius: 50%; border: 2px solid rgba(157, 92, 255, 0.85); box-shadow: 0 0 10px rgba(157, 92, 255, 0.6); }
+
+.space-game .overlay { border-radius: 18px; }
+
+/* ---------- results ---------- */
+
+.space-results { overflow-x: clip; } /* keep the record glow and confetti from widening the page */
+.space-results .results-title { font-size: clamp(1.7rem, 8.5vw, 3rem); line-height: 1.1; }
+.space-res-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.space-res-grid dd { white-space: nowrap; }
+
 /* ---------- larger screens ---------- */
 
 @media (min-width: 768px) {
@@ -1331,8 +1583,9 @@ button { font: inherit; color: inherit; }
     .hud-box b { font-size: 1.8rem; }
     .hud-timer b { font-size: 2.3rem; }
     .stat-main b { font-size: 2.3rem; }
-    .reflex-hud .hud-box b, .matrix-hud .hud-box b { font-size: 1.7rem; }
-    .reflex-hud .hud-box span, .matrix-hud .hud-box span { font-size: 0.62rem; }
+    .reflex-hud .hud-box b, .matrix-hud .hud-box b, .space-hud .hud-box b { font-size: 1.7rem; }
+    .reflex-hud .hud-box span, .matrix-hud .hud-box span, .space-hud .hud-box span { font-size: 0.62rem; }
+    .space-res-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .reflex-res-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 

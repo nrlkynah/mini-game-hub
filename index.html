@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#05040f">
-    <meta name="description" content="Mini Game Hub: a neon arcade of quick browser games: Color Chaos, Neon Reflex and Memory Matrix.">
+    <meta name="description" content="Mini Game Hub: a neon arcade of quick browser games: Color Chaos, Neon Reflex, Memory Matrix and Space Tap.">
     <title>Mini Game Hub · Your Neon Arcade</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -258,6 +258,86 @@
 
             <button id="mm-again" type="button" class="btn btn-play"><span class="btn-icon" aria-hidden="true">▶</span> PLAY AGAIN</button>
             <button id="mm-home" type="button" class="btn btn-secondary" aria-label="Home: back to the Mini Game Hub">HOME</button>
+        </section>
+
+        <!-- Space Tap: home -->
+        <section id="screen-space-home" class="screen home space-home" aria-labelledby="st-title" hidden>
+            <a class="back-link" href="#">← Back to Hub</a>
+            <h1 id="st-title" class="logo space-logo" aria-label="Space Tap">
+                <span class="logo-line space-word">SPACE</span>
+                <span class="logo-line space-tap"><span class="space-rocket" aria-hidden="true">🚀</span>TAP</span>
+            </h1>
+            <p class="subtitle">Tap your way through the galaxy</p>
+            <p class="tagline">Tap. Combo. Survive the chaos.</p>
+
+            <button id="st-play" type="button" class="btn btn-play"><span class="btn-icon" aria-hidden="true">▶</span> PLAY</button>
+
+            <div class="stat-row space-stats">
+                <div class="stat stat-main"><span>Best Score</span><b id="st-home-best">0</b></div>
+                <div class="stat stat-alt"><span>Best Combo</span><b id="st-home-combo">—</b></div>
+                <div class="stat stat-fast"><span>Best Accuracy</span><b id="st-home-accuracy">—</b></div>
+            </div>
+
+            <div class="how panel space-how">
+                <p><span class="how-tag">How to play · 30 seconds</span><strong>Tap the stars, planets and comets before they fade.</strong> Hits in a row build a combo, up to 2× points. Keyboard: the number on a target.</p>
+                <ul class="space-legend">
+                    <li><span aria-hidden="true">⭐</span> Star <b>+100</b></li>
+                    <li><span aria-hidden="true">🪐</span> Planet <b>+100</b></li>
+                    <li><span aria-hidden="true">☄️</span> Comet <b>+250</b></li>
+                    <li class="is-mine"><span aria-hidden="true">💣</span> Mine <b>MISS</b></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Space Tap: game -->
+        <section id="screen-space-game" class="screen game space-game" aria-label="Space Tap game" hidden>
+            <header class="hud space-hud">
+                <div class="hud-box hud-score"><span>Score</span><b id="st-score">0</b></div>
+                <div id="st-timer-wrap" class="hud-box hud-timer"><span>Time</span><b id="st-timer">30</b></div>
+                <div id="st-combo-wrap" class="hud-box hud-combo"><span>Combo</span><b><em id="st-combo">—</em><small id="st-multiplier">×1.0</small></b></div>
+                <div class="hud-box hud-fast"><span>Accuracy</span><b id="st-accuracy">100%</b></div>
+            </header>
+            <div class="timebar" aria-hidden="true"><span id="st-timebar"></span></div>
+
+            <div class="space-wrap">
+                <div id="st-field" class="space-arena is-locked" tabindex="0" role="application" aria-roledescription="space arena" aria-label="Space arena. Tap stars, planets and comets; avoid mines. Keyboard: press the number shown on a target." aria-disabled="true">
+                    <span class="space-stars" aria-hidden="true"></span>
+                    <span class="space-stars space-stars-far" aria-hidden="true"></span>
+                    <span id="st-phase" class="space-phase" aria-hidden="true"></span>
+                </div>
+                <div id="st-fx" class="space-fx" aria-hidden="true"></div>
+                <div id="st-countdown" class="overlay countdown" role="status" aria-live="assertive" hidden><span id="st-countdown-num">3</span></div>
+                <div id="st-done" class="overlay timesup" role="status" hidden><span>TIME'S UP!</span></div>
+            </div>
+            <p id="st-live" class="sr-only" aria-live="polite"></p>
+
+            <div class="game-foot">
+                <p class="hint">Tap ⭐ 🪐 ☄️ · avoid 💣</p>
+                <button id="st-quit" type="button" class="btn btn-chip">✕ Quit</button>
+            </div>
+        </section>
+
+        <!-- Space Tap: results -->
+        <section id="screen-space-results" class="screen results space-results" aria-labelledby="st-results-title" hidden>
+            <div id="st-confetti" class="confetti" aria-hidden="true"></div>
+            <p class="eyebrow">Results</p>
+            <h2 id="st-results-title" class="results-title">SPACE RUN COMPLETE</h2>
+            <p id="st-new-best" class="new-best" role="status" hidden>🚀 NEW BEST!</p>
+
+            <div class="final">
+                <span>Final Score</span>
+                <b id="st-res-score">0</b>
+            </div>
+
+            <dl class="res-grid space-res-grid">
+                <div class="stat"><dt>Targets Hit</dt><dd id="st-res-hits">0</dd></div>
+                <div class="stat stat-fast"><dt>Accuracy</dt><dd id="st-res-accuracy">100%</dd></div>
+                <div class="stat stat-alt"><dt>Best Combo</dt><dd id="st-res-combo">—</dd></div>
+                <div class="stat"><dt>Best Score</dt><dd id="st-res-best">0</dd></div>
+            </dl>
+
+            <button id="st-again" type="button" class="btn btn-play"><span class="btn-icon" aria-hidden="true">▶</span> PLAY AGAIN</button>
+            <button id="st-home" type="button" class="btn btn-secondary" aria-label="Home: back to the Mini Game Hub">HOME</button>
         </section>
     </main>
 
