@@ -9,7 +9,7 @@ export const GAMES = [
   { id: 'neon-reflex', icon: '⚡', title: 'Neon Reflex', tagline: 'How fast are you?', status: 'playable', accent: 'magenta' },
   { id: 'memory-matrix', icon: '🧠', title: 'Memory Matrix', tagline: 'Remember the light', status: 'playable', accent: 'purple' },
   { id: 'space-tap', icon: '🚀', title: 'Space Tap', tagline: 'Tap. Combo. Survive.', status: 'playable', accent: 'lime' },
-  { id: 'laser-dodge', icon: '💥', title: 'Laser Dodge', tagline: 'Survive the beam', status: 'soon', accent: 'blue' },
+  { id: 'laser-dodge', icon: '💥', title: 'Laser Dodge', tagline: 'Dodge. Survive. Beat your best.', status: 'playable', accent: 'blue' },
 ];
 
 export const STATUS_LABELS = { playable: 'Playable', next: 'Coming Next', soon: 'Coming Soon' };

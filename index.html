@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#05040f">
-    <meta name="description" content="Mini Game Hub: a neon arcade of quick browser games: Color Chaos, Neon Reflex, Memory Matrix and Space Tap.">
+    <meta name="description" content="Mini Game Hub: a neon arcade of quick browser games: Color Chaos, Neon Reflex, Memory Matrix, Space Tap and Laser Dodge.">
     <title>Mini Game Hub · Futuristic Neon Arcade</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -363,6 +363,84 @@
 
             <button id="st-again" type="button" class="btn btn-play"><span class="btn-icon" aria-hidden="true">▶</span> PLAY AGAIN</button>
             <button id="st-home" type="button" class="btn btn-secondary" aria-label="Home: back to the Mini Game Hub">HOME</button>
+        </section>
+
+        <!-- Laser Dodge: home -->
+        <section id="screen-laser-home" class="screen home laser-home" aria-labelledby="ld-title" hidden>
+            <a class="back-link" href="#">← Back to Hub</a>
+            <h1 id="ld-title" class="logo laser-logo" aria-label="Laser Dodge">
+                <span class="logo-line laser-word">LASER</span>
+                <span class="logo-line laser-dodge">DODGE</span>
+            </h1>
+            <p class="subtitle">Dodge. Survive. Beat your best.</p>
+            <p class="tagline">How long can you last?</p>
+
+            <button id="ld-play" type="button" class="btn btn-play"><span class="btn-icon" aria-hidden="true">▶</span> PLAY</button>
+
+            <div class="stat-row laser-stats">
+                <div class="stat stat-main"><span>Best Score</span><b id="ld-home-best">0</b></div>
+                <div class="stat stat-fast"><span>Best Time</span><b id="ld-home-time">—</b></div>
+                <div class="stat stat-alt"><span>Best Streak</span><b id="ld-home-streak">—</b></div>
+            </div>
+
+            <div class="how panel">
+                <span class="how-laser" aria-hidden="true"><i></i></span>
+                <p><span class="how-tag">How to play</span><strong>Move the orb out of the red zones before the lasers fire.</strong> Each laser warns, charges, then fires. 3 lives. Move: arrow keys or WASD; on a phone, drag anywhere.</p>
+            </div>
+        </section>
+
+        <!-- Laser Dodge: game -->
+        <section id="screen-laser-game" class="screen game laser-game" aria-label="Laser Dodge game" hidden>
+            <header class="hud laser-hud">
+                <div class="hud-box hud-score"><span>Score</span><b id="ld-score">0</b></div>
+                <div class="hud-box hud-level"><span>Time</span><b id="ld-time">0.0s</b></div>
+                <div class="hud-box hud-fast"><span>Best</span><b id="ld-best">—</b></div>
+                <div class="hud-box hud-combo"><span>Lives</span><b id="ld-lives" class="laser-lives" role="img" aria-label="Lives: 3 of 3"><i>❤️</i><i>❤️</i><i>❤️</i></b></div>
+            </header>
+            <div class="laser-status">
+                <p id="ld-streak" class="laser-streak">SURVIVAL x1</p>
+                <p id="ld-phase" class="laser-phase"></p>
+            </div>
+
+            <div id="ld-arena" class="laser-arena is-locked" tabindex="0" role="application" aria-roledescription="laser arena" aria-label="Laser arena. Move with the arrow keys or WASD, or drag. Leave the red zones before the lasers fire." aria-disabled="true">
+                <div id="ld-field" class="laser-field">
+                    <div id="ld-player" class="ld-player" aria-hidden="true"></div>
+                    <div class="ld-trail" aria-hidden="true"></div>
+                    <div id="ld-fx" class="laser-fx" aria-hidden="true"></div>
+                </div>
+                <p id="ld-alert" class="laser-alert" aria-hidden="true"></p>
+                <div id="ld-countdown" class="overlay countdown" role="status" aria-live="assertive" hidden><span id="ld-countdown-num">3</span></div>
+                <div id="ld-over" class="overlay timesup" role="status" hidden><span>GAME OVER</span></div>
+            </div>
+            <p id="ld-live" class="sr-only" aria-live="polite"></p>
+
+            <div class="game-foot">
+                <p class="hint">Arrows / WASD · or drag</p>
+                <button id="ld-quit" type="button" class="btn btn-chip">✕ Quit</button>
+            </div>
+        </section>
+
+        <!-- Laser Dodge: results -->
+        <section id="screen-laser-results" class="screen results laser-results" aria-labelledby="ld-results-title" hidden>
+            <div id="ld-confetti" class="confetti" aria-hidden="true"></div>
+            <p class="eyebrow">Game Over</p>
+            <h2 id="ld-results-title" class="results-title">LASER DODGED</h2>
+            <p id="ld-new-best" class="new-best" role="status" hidden>💥 NEW BEST!</p>
+
+            <div class="final">
+                <span>Final Score</span>
+                <b id="ld-res-score">0</b>
+            </div>
+
+            <dl class="res-grid laser-res-grid">
+                <div class="stat stat-fast"><dt>Survival Time</dt><dd id="ld-res-time">0.0s</dd></div>
+                <div class="stat"><dt>Best Time</dt><dd id="ld-res-best-time">0.0s</dd></div>
+                <div class="stat"><dt>Best Score</dt><dd id="ld-res-best">0</dd></div>
+                <div class="stat stat-alt"><dt>Best Survival Streak</dt><dd id="ld-res-streak">x1</dd></div>
+            </dl>
+
+            <button id="ld-again" type="button" class="btn btn-play"><span class="btn-icon" aria-hidden="true">▶</span> PLAY AGAIN</button>
+            <button id="ld-home" type="button" class="btn btn-secondary" aria-label="Home: back to the Mini Game Hub">HOME</button>
         </section>
     </main>
 

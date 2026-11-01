@@ -545,6 +545,8 @@ button { font: inherit; color: inherit; }
 @media (min-width: 640px) and (max-width: 1023px) {
     .game-card.is-playable { grid-column: span 1; }
     .game-card.is-playable .game-title { font-size: 1.45rem; }
+    /* An odd last playable game gets the full row */
+    .game-grid[data-playable="5"] .game-card.is-playable:nth-child(5) { grid-column: 1 / -1; }
 }
 
 /* Wide screens: the playable games three across, the locked ones two across below. */
@@ -556,6 +558,8 @@ button { font: inherit; color: inherit; }
     .game-card.is-wide { grid-column: 1 / -1; }
     /* Four playable games: two by two */
     .game-grid[data-playable="4"] .game-card.is-playable { grid-column: span 3; }
+    /* Five: three across, then two */
+    .game-grid[data-playable="5"] .game-card.is-playable:nth-child(n + 4) { grid-column: span 3; }
 }
 
 /* ---------- home: title screen ---------- */
@@ -1008,9 +1012,9 @@ button { font: inherit; color: inherit; }
 .reflex-bolt { display: inline-block; margin-right: 0.08em; font-size: 0.62em; vertical-align: 0.18em; filter: drop-shadow(0 0 10px rgba(255, 224, 58, 0.9)); }
 
 .stat-fast { --accent: var(--lime); border-color: rgba(166, 255, 60, 0.28); }
-.reflex-stats, .matrix-stats, .space-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.reflex-stats .stat, .matrix-stats .stat, .space-stats .stat { padding: 10px 6px 8px; }
-.reflex-stats .stat b, .reflex-stats .stat-main b, .matrix-stats .stat b, .matrix-stats .stat-main b, .space-stats .stat b, .space-stats .stat-main b { font-size: clamp(1rem, 4.6vw, 1.6rem); white-space: nowrap; }
+.reflex-stats, .matrix-stats, .space-stats, .laser-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.reflex-stats .stat, .matrix-stats .stat, .space-stats .stat, .laser-stats .stat { padding: 10px 6px 8px; }
+.reflex-stats .stat b, .reflex-stats .stat-main b, .matrix-stats .stat b, .matrix-stats .stat-main b, .space-stats .stat b, .space-stats .stat-main b, .laser-stats .stat b, .laser-stats .stat-main b { font-size: clamp(1rem, 4.6vw, 1.6rem); white-space: nowrap; }
 
 /* A small target as the "how to play" picture */
 .how-target {
@@ -1031,10 +1035,10 @@ button { font: inherit; color: inherit; }
 .reflex-game { min-height: 0; }
 .reflex-game .game-foot { flex-shrink: 0; }
 
-.reflex-hud, .matrix-hud, .space-hud { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; flex-shrink: 0; }
-.reflex-hud .hud-box, .matrix-hud .hud-box, .space-hud .hud-box { padding: 7px 4px 6px; }
-.reflex-hud .hud-box span, .matrix-hud .hud-box span, .space-hud .hud-box span { font-size: 0.56rem; letter-spacing: 0.2em; }
-.reflex-hud .hud-box b, .matrix-hud .hud-box b, .space-hud .hud-box b { font-size: clamp(0.95rem, 4.4vw, 1.5rem); }
+.reflex-hud, .matrix-hud, .space-hud, .laser-hud { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; flex-shrink: 0; }
+.reflex-hud .hud-box, .matrix-hud .hud-box, .space-hud .hud-box, .laser-hud .hud-box { padding: 7px 4px 6px; }
+.reflex-hud .hud-box span, .matrix-hud .hud-box span, .space-hud .hud-box span, .laser-hud .hud-box span { font-size: 0.56rem; letter-spacing: 0.2em; }
+.reflex-hud .hud-box b, .matrix-hud .hud-box b, .space-hud .hud-box b, .laser-hud .hud-box b { font-size: clamp(0.95rem, 4.4vw, 1.5rem); }
 .reflex-hud b em { font-style: normal; }
 .reflex-hud b small { font-size: 0.58em; opacity: 0.7; }
 .hud-round { --accent: var(--purple); }
@@ -1679,6 +1683,178 @@ button { font: inherit; color: inherit; }
 .space-res-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .space-res-grid dd { white-space: nowrap; }
 
+/* ==========================================================================
+   Laser Dodge: same arcade, its own danger identity. A scanning grid, red /
+   orange lasers that warn → charge → fire, a cyan orb to keep alive.
+   ========================================================================== */
+
+/* ---------- title screen ---------- */
+
+.laser-logo { font-size: clamp(2.6rem, 14.5vw, 5.6rem); }
+.laser-word {
+    color: #ffe2e9;
+    text-shadow: 0 0 4px var(--danger), 0 0 14px var(--danger), 0 0 34px rgba(255, 61, 113, 0.7), 0 0 70px rgba(255, 138, 61, 0.4);
+}
+.laser-dodge {
+    color: #dcfbff;
+    text-shadow: 0 0 4px var(--cyan), 0 0 14px var(--cyan), 0 0 34px rgba(34, 241, 255, 0.6), 0 0 70px rgba(157, 92, 255, 0.5);
+    animation: flicker 5.2s linear infinite;
+}
+.how-laser { position: relative; flex-shrink: 0; width: 56px; height: 44px; border-radius: 8px; border: 1px solid rgba(255, 61, 113, 0.5); background: rgba(5, 4, 16, 0.6); overflow: hidden; }
+.how-laser::before { content: ''; position: absolute; left: -10%; right: -10%; top: 40%; height: 4px; background: #fff; box-shadow: 0 0 6px #ff3d71, 0 0 12px #ff3d71; transform: rotate(-12deg); }
+.how-laser i { position: absolute; left: 34px; top: 26px; width: 10px; height: 10px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+
+/* ---------- game: full-height screen, wider on desktop ---------- */
+
+.is-laser-game .app { max-width: 980px; height: 100dvh; }
+.laser-game { min-height: 0; }
+.laser-game .game-foot { flex-shrink: 0; }
+.laser-hud .hud-box .laser-lives { display: flex; justify-content: center; gap: 1px; font-size: clamp(0.78rem, 3.4vw, 1.3rem); }
+.laser-lives i { font-style: normal; filter: drop-shadow(0 0 5px rgba(255, 61, 113, 0.7)); }
+.laser-lives i.is-lost { filter: grayscale(0.6) brightness(0.7); }
+
+.laser-status { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 24px; flex-shrink: 0; }
+.laser-streak, .laser-phase {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    white-space: nowrap;
+}
+.laser-streak { color: var(--cyan); text-shadow: 0 0 8px rgba(34, 241, 255, 0.6); }
+.laser-streak[data-tier="2"] { color: #ffd6f6; text-shadow: 0 0 8px var(--magenta); }
+.laser-streak[data-tier="3"] { color: var(--lime); text-shadow: 0 0 8px var(--lime); }
+.laser-phase { color: var(--lime); }
+.laser-phase[data-phase="medium"] { color: #ffe03a; }
+.laser-phase[data-phase="hard"] { color: #ff8a3d; }
+.laser-phase[data-phase="extreme"] { color: var(--danger); text-shadow: 0 0 10px var(--danger); }
+
+/* ---------- game: the arena ---------- */
+
+.laser-arena {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    min-height: 240px;
+    display: grid;
+    place-items: center;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: grab;
+}
+.laser-arena.is-dragging { cursor: grabbing; }
+.laser-arena.is-locked { cursor: default; }
+.laser-arena:focus { outline: none; }
+.laser-arena:focus-visible .laser-field { outline: 2px solid var(--cyan); outline-offset: 4px; }
+
+.laser-field {
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px;
+    background:
+        linear-gradient(rgba(255, 61, 113, 0.06) 1px, transparent 1px) 0 0 / 32px 32px,
+        linear-gradient(90deg, rgba(255, 61, 113, 0.06) 1px, transparent 1px) 0 0 / 32px 32px,
+        radial-gradient(70% 70% at 50% 50%, rgba(157, 92, 255, 0.14), transparent 75%),
+        linear-gradient(180deg, #0b0620, #040210);
+    border: 1px solid rgba(255, 61, 113, 0.55);
+    box-shadow: 0 0 0 1px rgba(255, 138, 61, 0.2), 0 0 24px rgba(255, 61, 113, 0.25), 0 0 60px rgba(157, 92, 255, 0.15), inset 0 0 40px rgba(0, 0, 0, 0.5);
+}
+/* A slow scanning line */
+.laser-field::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 14%;
+    background: linear-gradient(180deg, transparent, rgba(255, 61, 113, 0.08) 80%, rgba(255, 61, 113, 0.22) 99%, transparent);
+    animation: scan 4.2s linear infinite;
+    pointer-events: none;
+}
+
+/* The player orb: placed by transform (its centre), sized from the arena scale. */
+.ld-player, .ld-trail {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--orb, 24px);
+    height: var(--orb, 24px);
+    margin: calc(var(--orb, 24px) / -2) 0 0 calc(var(--orb, 24px) / -2);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.ld-player {
+    z-index: 3;
+    background: radial-gradient(circle at 35% 30%, #fff, #b8fbff 30%, var(--cyan) 60%, #7a4dff 100%);
+    box-shadow: 0 0 10px var(--cyan), 0 0 24px rgba(34, 241, 255, 0.7), 0 0 40px rgba(157, 92, 255, 0.5);
+}
+.ld-player.is-safe { animation: ld-blink 0.16s steps(2) infinite; }
+@keyframes ld-blink { 50% { opacity: 0.25; } }
+.ld-trail { z-index: 2; background: rgba(34, 241, 255, 0.35); filter: blur(4px); transition: transform 0.12s linear; }
+
+/* Lasers: a danger zone that warns, charges, then fires a white-hot beam. */
+.ld-laser {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+    display: grid;
+    align-items: center;
+    pointer-events: none;
+    transform-origin: 50% 50%;
+}
+.ld-core { display: block; width: 100%; height: 100%; border-radius: 999px; }
+.ld-laser[data-phase="warning"] { background: rgba(255, 61, 113, 0.12); border-block: 1px dashed rgba(255, 61, 113, 0.75); animation: ld-warn 0.5s ease-in-out infinite alternate; }
+.ld-laser[data-phase="warning"] .ld-core { height: 2px; background: repeating-linear-gradient(90deg, rgba(255, 61, 113, 0.9) 0 14px, transparent 14px 24px); }
+.ld-laser[data-phase="charge"] { background: rgba(255, 138, 61, 0.28); border-block: 1px solid rgba(255, 138, 61, 0.9); }
+.ld-laser[data-phase="charge"] .ld-core { height: 30%; background: #ffb07a; box-shadow: 0 0 10px #ff8a3d; animation: ld-charge 0.08s steps(2) infinite; }
+.ld-laser[data-phase="active"] .ld-core {
+    background: linear-gradient(180deg, #ff3d71, #fff 35%, #fff 65%, #ff3d71);
+    box-shadow: 0 0 12px #ff3d71, 0 0 26px #ff2bd6, 0 0 46px rgba(255, 138, 61, 0.7);
+}
+@keyframes ld-warn { to { background: rgba(255, 61, 113, 0.22); } }
+@keyframes ld-charge { 50% { opacity: 0.55; } }
+.ld-sector { position: absolute; left: 0; top: 0; z-index: 0; border-radius: 50%; pointer-events: none; }
+
+.laser-alert {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    z-index: 4;
+    translate: -50% 0;
+    margin: 0;
+    padding: 3px 12px;
+    border-radius: 999px;
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 0.66rem;
+    letter-spacing: 0.24em;
+    white-space: nowrap;
+    pointer-events: none;
+}
+.laser-alert:empty { display: none; }
+.laser-alert[data-state="warning"] { color: #ffe2e9; background: rgba(255, 61, 113, 0.2); border: 1px solid rgba(255, 61, 113, 0.7); box-shadow: 0 0 12px rgba(255, 61, 113, 0.5); }
+.laser-alert[data-state="charge"] { color: #fff1e6; background: rgba(255, 138, 61, 0.3); border: 1px solid #ff8a3d; box-shadow: 0 0 16px rgba(255, 138, 61, 0.7); }
+
+.laser-fx { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.ld-flash { position: absolute; inset: 0; background: radial-gradient(circle, rgba(255, 255, 255, 0.35), rgba(255, 61, 113, 0.35) 45%, rgba(255, 61, 113, 0.1) 80%); }
+.ld-spark { position: absolute; width: 14px; height: 3px; margin-top: -1.5px; border-radius: 999px; transform-origin: 0 50%; background: linear-gradient(90deg, #fff, transparent); box-shadow: 0 0 8px #ff3d71; }
+.ld-float { position: absolute; z-index: 5; display: flex; flex-direction: column; align-items: center; translate: -50% -130%; font-family: var(--font-display); font-weight: 900; line-height: 1.1; white-space: nowrap; }
+.ld-float[data-tone="hit"] { --tone: var(--danger); }
+.ld-float[data-tone="near"] { --tone: var(--lime); }
+.ld-float b { font-size: clamp(1.15rem, 5vw, 1.6rem); color: #fff; text-shadow: 0 0 6px var(--tone), 0 0 18px var(--tone), 0 2px 0 rgba(0, 0, 0, 0.6); }
+.ld-float small { font-size: 0.66rem; letter-spacing: 0.22em; color: var(--tone); text-shadow: 0 0 10px var(--tone); }
+
+.laser-game .overlay { border-radius: 14px; }
+
+/* ---------- results ---------- */
+
+.laser-results { overflow-x: clip; } /* keep the record glow and confetti from widening the page */
+.laser-res-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.laser-res-grid dd { white-space: nowrap; }
+
 /* ---------- larger screens ---------- */
 
 @media (min-width: 768px) {
@@ -1686,8 +1862,9 @@ button { font: inherit; color: inherit; }
     .hud-box b { font-size: 1.8rem; }
     .hud-timer b { font-size: 2.3rem; }
     .stat-main b { font-size: 2.3rem; }
-    .reflex-hud .hud-box b, .matrix-hud .hud-box b, .space-hud .hud-box b { font-size: 1.7rem; }
-    .reflex-hud .hud-box span, .matrix-hud .hud-box span, .space-hud .hud-box span { font-size: 0.62rem; }
+    .reflex-hud .hud-box b, .matrix-hud .hud-box b, .space-hud .hud-box b, .laser-hud .hud-box b { font-size: 1.7rem; }
+    .reflex-hud .hud-box span, .matrix-hud .hud-box span, .space-hud .hud-box span, .laser-hud .hud-box span { font-size: 0.62rem; }
+    .laser-res-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .space-res-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .reflex-res-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
@@ -1702,3 +1879,5 @@ button { font: inherit; color: inherit; }
 [data-motion="reduced"] .hud-timer.is-urgent b { animation: none; text-decoration: underline; }
 /* Gameplay feedback keeps running with reduced motion: how long a Space Tap target has left. */
 [data-motion="reduced"] .st-life { animation-duration: var(--life) !important; }
+/* Laser Dodge: the safe-after-a-hit blink becomes a steady dim orb. */
+[data-motion="reduced"] .ld-player.is-safe { opacity: 0.45; }

@@ -1,8 +1,7 @@
 # Mini Game Hub
 
 Futuristic neon mini games for the browser: Color Chaos, Neon Reflex, Memory
-Matrix and Space Tap (Laser Dodge is coming soon). No accounts, no backend,
-no dependencies.
+Matrix, Space Tap and Laser Dodge. No accounts, no backend, no dependencies.
 
 **Settings (⚙ in the top bar):** Sound and Motion, ON/OFF, for every game.
 Saved on the device. Motion ON still follows the device's reduce-motion
@@ -79,6 +78,30 @@ and live shorter, every 7th / 5th / 4th target is a mine, and every 6th / 8th
 / 10th is a comet. Decoys and comets follow that fixed rhythm, not luck.
 Keyboard: the number shown on a target (1–4) taps it.
 
+## Laser Dodge: dodge, survive, beat your best
+
+Keep the orb alive in a laser arena. Move with the arrow keys or WASD, or
+drag anywhere in the arena (touch or mouse: the orb moves as far as your
+finger does). 3 lives.
+
+Every laser shows its danger zone first (⚠ WARNING), then charges (⚡ CHARGE),
+then fires. Patterns: horizontal, vertical, diagonal and sweeping (from a
+corner, through the zone shown). The first beam of each wave is aimed near
+you, so standing still is never safe; beams the same way leave a gap.
+
+| Survived | Phase | Points per 0.1 s |
+|---|---|---|
+| 0–10 s | EASY | 10 |
+| 10–20 s | MEDIUM | 15 |
+| 20–30 s | HARD | 20 |
+| 30 s + | EXTREME | 30 |
+
+Plus 5 per survival-streak step above x1 (x2 after 5 s without a hit, up to
+x8), and +50 for a NEAR MISS (a beam passing within 4 units without touching).
+Later phases warn a little shorter, send waves a little sooner and more lasers
+at once. A hit costs exactly one life, resets the streak, and gives one second
+of safety; each laser can only ever hurt once.
+
 ## Run it
 
 ```sh
@@ -92,8 +115,8 @@ The page uses ES modules, so open it through the server (not as a `file://`).
 ```sh
 npm test           # unit tests for the game logic and saved data (node --test)
 npm run check      # syntax check of every file + HTML ids used by the code
-npm run e2e        # plays all four games in headless Edge/Chrome (~5 min)
-                   # E2E_ONLY=color-chaos, neon-reflex, memory-matrix or space-tap for one game
+npm run e2e        # plays all five games in headless Edge/Chrome (~6 min)
+                   # E2E_ONLY=color-chaos, neon-reflex, memory-matrix, space-tap or laser-dodge
 ```
 
 `npm run e2e` writes screenshots to `e2e-output/`. Set `BROWSER=/path/to/chrome`
@@ -119,6 +142,13 @@ src/
     pattern.js   pattern generation, reveal timing, checking a pick
     scoring.js   level points, streak and quick bonus, accuracy
     engine.js    createMemoryGame / tick(state, now) / select(state, { tile, at })
+  laser/       Laser Dodge game logic, no DOM
+    config.js    arena, player, beams, phases, streak and points
+    movement.js  keys and drag, kept inside the arena
+    lasers.js    the four patterns, warning → charge → active, beam angle
+    collision.js orb vs beam, near misses
+    scoring.js   phase at a moment, wave timing, streak, survival points
+    engine.js    createLaserGame / tick(state, { now, dir }) / nudge(state, dx, dy)
   space/       Space Tap game logic, no DOM
     config.js    run length, difficulty phases, target kinds, multipliers
     targets.js   phase at a moment, next target kind, free spot, keyboard slot
@@ -133,10 +163,12 @@ src/
     arenaView.js   draws the Neon Reflex arena, target and effects
     matrixView.js  draws the Memory Matrix grid, pointer + keyboard input, effects
     spaceView.js   draws the Space Tap arena, targets and effects
+    laserView.js   draws the Laser Dodge arena, orb, lasers; touch/mouse drag
     storage.js     localStorage (Color Chaos best, sound and motion settings), validated
     reflexStorage.js  localStorage (Neon Reflex bests), validated
     matrixStorage.js  localStorage (Memory Matrix bests), validated
     spaceStorage.js   localStorage (Space Tap bests), validated
+    laserStorage.js   localStorage (Laser Dodge bests), validated
     audio.js       sound effects made with Web Audio (no audio files)
   games.js     the hub's game registry (status: playable / soon)
   hub.js       the hub's game cards
@@ -144,7 +176,8 @@ src/
   neonReflex.js  Neon Reflex screens, the clock, wiring
   memoryMatrix.js  Memory Matrix screens, the clock, wiring
   spaceTap.js  Space Tap screens, the run's clock, wiring
-  main.js      routes #color-chaos / #neon-reflex / #memory-matrix / #space-tap / the hub
+  laserDodge.js  Laser Dodge screens, the run's clock, keyboard, wiring
+  main.js      routes #color-chaos / #neon-reflex / #memory-matrix / #space-tap / #laser-dodge / the hub
   styles.css
 tests/         node --test unit tests
 scripts/       dev server, checks, browser end-to-end test
@@ -156,7 +189,8 @@ scripts/       dev server, checks, browser end-to-end test
 - **Saved data:** `localStorage` keys `mgh.colorChaos.best.v1`,
   `mgh.neonReflex.best.v1` (score, fastest reaction, combo),
   `mgh.memoryMatrix.best.v1` (score, highest level, streak),
-  `mgh.spaceTap.best.v1` (score, combo, accuracy), `mgh.sound`
+  `mgh.spaceTap.best.v1` (score, combo, accuracy),
+  `mgh.laserDodge.best.v1` (score, time in ms, survival streak), `mgh.sound`
   and `mgh.motion`. Bad or tampered values fall back to defaults.
 - **Sound:** nothing is created until the player presses Play, and sound
   can be turned off in Settings (or on the Color Chaos screen).

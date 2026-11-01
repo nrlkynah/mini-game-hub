@@ -36,6 +36,7 @@ const GAME_URL = `${URL_ROOT}#color-chaos`;
 const REFLEX_URL = `${URL_ROOT}#neon-reflex`;
 const MATRIX_URL = `${URL_ROOT}#memory-matrix`;
 const SPACE_URL = `${URL_ROOT}#space-tap`;
+const LASER_URL = `${URL_ROOT}#laser-dodge`;
 const ONLY = process.env.E2E_ONLY;
 const OUT = 'e2e-output';
 
@@ -98,9 +99,9 @@ async function run() {
   check('the hub is shown first', await js(`!document.getElementById('screen-hub').hidden && document.getElementById('screen-home').hidden`));
   const cards = await js(`[...document.querySelectorAll('.game-card')].map((c) => ({ id: c.dataset.game, playable: c.classList.contains('is-playable'), status: c.querySelector('.game-status')?.textContent.trim() ?? '' }))`);
   check('the hub shows five game cards', cards.length === 5, cards.map((c) => c.id).join(', '));
-  check('Color Chaos, Neon Reflex, Memory Matrix and Space Tap are playable', cards.filter((c) => c.playable).map((c) => c.id).join() === 'color-chaos,neon-reflex,memory-matrix,space-tap');
-  check('Laser Dodge is still coming soon', cards.filter((c) => !c.playable).map((c) => `${c.id}:${c.status}`).join() === 'laser-dodge:🔒 Coming Soon', cards.filter((c) => !c.playable).map((c) => c.status).join(' | '));
-  check('only the four playable cards have a Play button', await js(`[...document.querySelectorAll('.game-card .btn-play')].map((b) => b.dataset.testid).join()`) === 'play-color-chaos,play-neon-reflex,play-memory-matrix,play-space-tap');
+  check('all five games are playable', cards.filter((c) => c.playable).map((c) => c.id).join() === 'color-chaos,neon-reflex,memory-matrix,space-tap,laser-dodge');
+  check('no game is locked or coming soon any more', cards.every((c) => c.playable && c.status === '') && (await js(`document.querySelectorAll('.game-card.is-locked, .game-status').length`)) === 0);
+  check('every card has a Play button', await js(`[...document.querySelectorAll('.game-card .btn-play')].map((b) => b.dataset.testid).join()`) === 'play-color-chaos,play-neon-reflex,play-memory-matrix,play-space-tap,play-laser-dodge');
   check('the Color Chaos card shows best score 0', (await js(`document.querySelector('[data-game="color-chaos"] .game-best b').textContent`)) === '0');
   check('hub: no horizontal scrolling', await noHorizontalScroll());
   await shot('00-hub-390');
@@ -125,6 +126,9 @@ async function run() {
   }
   if (!ONLY || ONLY === 'space-tap') {
     await runSpaceTap();
+  }
+  if (!ONLY || ONLY === 'laser-dodge') {
+    await runLaserDodge();
   }
 
   check('no JavaScript errors in the console', errors.length === 0, errors.slice(0, 3).join(' | '));
@@ -346,7 +350,7 @@ async function runSettings() {
       return {
         bar: brand.right <= gear.left && gear.right <= home.left && home.right <= innerWidth,
         title: title.right <= innerWidth && lines.every((n) => n === 1),
-        cards: playable.length === 4 && playable.every((c) => c.right <= innerWidth + 0.5 && c.left >= -0.5),
+        cards: playable.length === 5 && playable.every((c) => c.right <= innerWidth + 0.5 && c.left >= -0.5),
         buttons: plays.every((b) => b.height >= 44),
       };
     })()`);
@@ -1005,6 +1009,268 @@ async function clickArenaCorner() {
   await mouse(p.x, p.y);
 }
 
+// ----- Laser Dodge -----
+
+async function runLaserDodge() {
+  await viewport(390, 844, true);
+  await open(URL_ROOT);
+  const otherBests = await js(`JSON.stringify(['colorChaos', 'neonReflex', 'memoryMatrix', 'spaceTap'].map((k) => localStorage.getItem('mgh.' + k + '.best.v1')))`);
+  check('laser: the hub card is playable with best score 0', await js(`document.querySelector('[data-game="laser-dodge"]').classList.contains('is-playable') && document.querySelector('[data-game="laser-dodge"] .game-best b').textContent === '0'`));
+  await click('[data-testid="play-laser-dodge"]');
+  await sleep(200);
+  check('laser: Play opens Laser Dodge', await js(`location.hash === '#laser-dodge' && !document.getElementById('screen-laser-home').hidden && document.getElementById('screen-hub').hidden`));
+  check('laser: home shows best 0 and no best time yet', (await text('ld-home-best')) === '0' && (await text('ld-home-time')) === '—');
+  await shot('50-laser-home-390');
+
+  // ----- countdown, arena, player -----
+  await click('#ld-play');
+  const countdown = [];
+  for (let i = 0; i < 4; i++) {
+    await sleep(i === 0 ? 150 : 800);
+    countdown.push(await text('ld-countdown-num'));
+  }
+  check('laser: countdown shows 3, 2, 1, GO!', countdown.join(',') === '3,2,1,GO!', countdown.join(','));
+  const scene = await laserScene();
+  check('laser: the arena is shown below the HUD and fits the screen', scene.field.w > 200 && scene.field.h > 200 && scene.field.top >= scene.hudBottom && scene.field.right <= scene.vw && scene.field.bottom <= scene.vh, JSON.stringify(scene.field));
+  check('laser: the player orb is shown in the middle of the arena', scene.player.inside && Math.abs(scene.player.x - scene.field.w / 2) < 2 && Math.abs(scene.player.y - scene.field.h / 2) < 2 && scene.player.size >= 12, `${Math.round(scene.player.size)}px`);
+  check('laser: the HUD starts at 0, 0.0s, 3 lives', (await text('ld-score')) === '0' && (await text('ld-time')) === '0.0s' && (await laserLives()) === 3);
+  await waitFor(`!document.getElementById('ld-arena').classList.contains('is-locked')`);
+  check('laser: the arena has keyboard focus after GO!', await js(`document.activeElement?.id === 'ld-arena'`));
+
+  // ----- a collision: exactly one life (measured on the first laser, with all 3 lives) -----
+  const hit = await takeHit();
+  check('laser: stepping into a firing beam costs exactly one life, with HIT! feedback', hit && hit.after === hit.before - 1 && /HIT!/.test(hit.fx) && hit.safe, JSON.stringify(hit));
+  await shot('53-laser-hit-390');
+  {
+    await sleep(500); // still standing in the beam, still safe
+    check('laser: staying in the beam does not cost a second life', (await laserLives()) === hit.after);
+    check('laser: a hit resets the survival streak', (await text('ld-streak')) === 'SURVIVAL x1');
+  }
+
+  // ----- movement -----
+  const p0 = (await laserScene()).player;
+  await keyHold('ArrowRight', 300);
+  const p1 = (await laserScene()).player;
+  await keyHold('a', 300);
+  const p2 = (await laserScene()).player;
+  await keyHold('w', 250);
+  const p3 = (await laserScene()).player;
+  check('laser: arrow keys and WASD move the player', p1.x > p0.x + 20 && p2.x < p1.x - 20 && p3.y < p2.y - 15, `x ${Math.round(p0.x)} → ${Math.round(p1.x)} → ${Math.round(p2.x)}, y ${Math.round(p2.y)} → ${Math.round(p3.y)}`);
+  await dragBy(-60, 40);
+  const p4 = (await laserScene()).player;
+  check('laser: dragging moves the player the same distance', Math.abs(p4.x - (p3.x - 60)) < 3 && Math.abs(p4.y - (p3.y + 40)) < 3, `${Math.round(p3.x)},${Math.round(p3.y)} → ${Math.round(p4.x)},${Math.round(p4.y)}`);
+  for (let i = 0; i < 5; i++) await dragBy(-120, -120); // well past the top-left corner, in steps that stay on screen
+  const corner = await laserScene();
+  check('laser: the player cannot leave the arena', corner.player.inside && corner.player.x <= corner.player.size / 2 + 2 && corner.player.y <= corner.player.size / 2 + 2, JSON.stringify(corner.player)); // +2: the field's 1px border
+
+  // ----- lasers: warning → charge → active -----
+  // Follow one new laser from its first frame.
+  const seenIds = await js(`[...document.querySelectorAll('.ld-laser')].map((l) => l.dataset.id)`);
+  await waitFor(`[...document.querySelectorAll('.ld-laser')].some((l) => !${JSON.stringify(seenIds)}.includes(l.dataset.id))`, 4000);
+  const watched = await js(`(() => { const l = [...document.querySelectorAll('.ld-laser')].find((n) => !${JSON.stringify(seenIds)}.includes(n.dataset.id)); return { id: l.dataset.id, phase: l.dataset.phase, alert: document.getElementById('ld-alert').textContent }; })()`);
+  const phaseOf = `document.querySelector('.ld-laser[data-id="${watched.id}"]')?.dataset.phase`;
+  check('laser: a new laser starts with a warning (⚠ WARNING shown)', watched.phase === 'warning' && ['⚠ WARNING', '⚡ CHARGE'].includes(watched.alert), JSON.stringify(watched));
+  await shot('51-laser-warning-390');
+  check('laser: then it charges (⚡ CHARGE shown)', await waitFor(`${phaseOf} === 'charge'`, 2000) && (await text('ld-alert')) === '⚡ CHARGE');
+  check('laser: then it fires', await waitFor(`${phaseOf} === 'active'`, 1000));
+  await shot('52-laser-active-390');
+  check('laser: score and time go up', Number((await text('ld-score')).replace(/,/g, '')) > 0 && parseFloat(await text('ld-time')) > 1);
+
+  // ----- more collisions: game over -----
+  await loseAllLives();
+  const finalHud = await text('ld-score');
+  const finalTime = await text('ld-time');
+  check('laser: losing the last life ends the run (GAME OVER)', (await laserLives()) === 0 && (await js(`!document.getElementById('ld-over').hidden && document.getElementById('ld-arena').classList.contains('is-locked')`)));
+
+  // ----- results -----
+  await sleep(1500);
+  check('laser: results screen is shown', await js(`!document.getElementById('screen-laser-results').hidden && document.getElementById('screen-laser-game').hidden`));
+  check('laser: results show score, survival time, best time, best score and best streak',
+    (await text('ld-res-score')) === finalHud && (await text('ld-res-time')) === finalTime && (await text('ld-res-best-time')) === finalTime && (await text('ld-res-best')) === finalHud && /^x\d$/.test(await text('ld-res-streak')),
+    `${finalHud}, ${finalTime}, ${await text('ld-res-streak')}`);
+  check('laser: the first run is a NEW BEST', await js(`!document.getElementById('ld-new-best').hidden`));
+  check('laser: results screen has no horizontal scroll', await noHorizontalScroll());
+  await shot('54-laser-results-390');
+  const saved = JSON.parse(await js(`localStorage.getItem('mgh.laserDodge.best.v1')`));
+  check('laser: best score, time and streak are saved as integers', saved.score === Number(finalHud.replace(/,/g, '')) && Number.isSafeInteger(saved.timeMs) && Math.abs(saved.timeMs / 1000 - parseFloat(finalTime)) < 0.06 && saved.streak >= 1, JSON.stringify(saved));
+  check('laser: the other games\' bests are untouched', (await js(`JSON.stringify(['colorChaos', 'neonReflex', 'memoryMatrix', 'spaceTap'].map((k) => localStorage.getItem('mgh.' + k + '.best.v1')))`)) === otherBests);
+
+  // ----- play again, then HOME -----
+  await click('#ld-again');
+  await sleep(200);
+  check('laser: Play Again starts fresh', (await text('ld-score')) === '0' && (await text('ld-time')) === '0.0s' && (await laserLives()) === 3 && !(await js(`document.getElementById('ld-countdown').hidden`)) && (await js(`document.querySelectorAll('.ld-laser').length`)) === 0);
+  await waitFor(`!document.getElementById('ld-arena').classList.contains('is-locked')`);
+  await loseAllLives();
+  await waitFor(`!document.getElementById('screen-laser-results').hidden`, 3000);
+  check('laser: the second run also reaches the results', await js(`!document.getElementById('screen-laser-results').hidden`));
+  const best = JSON.parse(await js(`localStorage.getItem('mgh.laserDodge.best.v1')`));
+  await click('#ld-home');
+  await sleep(250);
+  check('laser: HOME returns to the Mini Game Hub', await js(`!document.getElementById('screen-hub').hidden && ['screen-laser-results', 'screen-laser-home'].every((id) => document.getElementById(id).hidden) && location.hash === ''`));
+  check('laser: the hub card shows the saved best score', (await js(`document.querySelector('[data-game="laser-dodge"] .game-best b').textContent`)) === best.score.toLocaleString('en-US'));
+
+  // ----- persistence -----
+  await open(LASER_URL);
+  check('laser: bests persist after refresh', (await text('ld-home-best')) === best.score.toLocaleString('en-US') && (await text('ld-home-time')) === `${(best.timeMs / 1000).toFixed(1)}s` && (await text('ld-home-streak')) === `x${best.streak}`);
+  await js(`localStorage.setItem('mgh.laserDodge.best.v1', '{broken')`);
+  await open(LASER_URL);
+  check('laser: a corrupted saved best does not break the page', (await text('ld-home-best')) === '0' && errors.length === 0);
+  await js(`localStorage.setItem('mgh.laserDodge.best.v1', ${JSON.stringify(JSON.stringify(best))})`);
+
+  // ----- settings: Sound OFF, Motion OFF -----
+  await js(`localStorage.setItem('mgh.sound', 'off'); localStorage.setItem('mgh.motion', 'reduced')`);
+  await open(LASER_URL);
+  await click('#ld-play');
+  await sleep(3400);
+  await waitFor(`document.querySelector('.ld-laser[data-phase="warning"]')`, 4000);
+  const calm = await js(`({ audio: Boolean(window.__audioCreated), motion: document.documentElement.dataset.motion, scan: getComputedStyle(document.getElementById('ld-field'), '::after').animationIterationCount, alert: document.getElementById('ld-alert').textContent })`);
+  check('laser: with Sound OFF there is no sound; with Motion OFF the scan stops but the warning stays', !calm.audio && calm.motion === 'reduced' && calm.scan === '1' && calm.alert === '⚠ WARNING', JSON.stringify(calm));
+  await click('#ld-quit');
+  check('laser: Quit goes back to the Laser Dodge home', await js(`!document.getElementById('screen-laser-home').hidden && !document.body.classList.contains('is-playing')`));
+  await js(`localStorage.removeItem('mgh.sound'); localStorage.removeItem('mgh.motion')`);
+  await open(LASER_URL);
+  await click('#screen-laser-home .back-link');
+  await sleep(200);
+  check('laser: Back to Hub returns to the hub', await js(`!document.getElementById('screen-hub').hidden && document.getElementById('screen-laser-home').hidden`));
+
+  // ----- layout at several sizes (touch drag on the phones) -----
+  for (const [w, h, mobile] of [[360, 640, true], [390, 844, true], [768, 1024, true], [1280, 800, false]]) {
+    await viewport(w, h, mobile);
+    await open(URL_ROOT);
+    await sleep(500); // let the cards finish sliding in
+    const hubOk = await noHorizontalScroll();
+    const cardsOk = await js(`(() => {
+      const boxes = [...document.querySelectorAll('.game-card')].map((c) => c.getBoundingClientRect());
+      return boxes.length === 5 && document.querySelectorAll('.game-card.is-playable').length === 5 && boxes.every((a, i) => boxes.every((b, j) => i === j || a.right <= b.left + 1 || b.right <= a.left + 1 || a.bottom <= b.top + 1 || b.bottom <= a.top + 1));
+    })()`);
+    await shot(`55-hub-${w}`);
+    check(`laser ${w}×${h}: hub shows five playable cards, no overlap, no horizontal scroll`, hubOk && cardsOk);
+
+    await open(LASER_URL);
+    const homeOk = await noHorizontalScroll();
+    const homeFits = await js(`(() => { const b = document.getElementById('ld-play').getBoundingClientRect(); const stats = [...document.querySelectorAll('.laser-stats b')].every((n) => n.scrollWidth <= n.clientWidth + 1); return b.height >= 44 && b.right <= innerWidth && stats; })()`);
+    await shot(`55-laser-home-${w}`);
+    await click('#ld-play');
+    await waitFor(`!document.getElementById('ld-arena').classList.contains('is-locked')`, 5000);
+    const before = (await laserScene()).player;
+    if (mobile) {
+      await touchDragBy(50, -30);
+    } else {
+      await dragBy(50, -30);
+    }
+    const s = await laserScene();
+    const values = await js(`[...document.querySelectorAll('.laser-hud b')].every((n) => n.scrollWidth <= n.clientWidth + 1)`);
+    await shot(`56-laser-game-${w}`);
+    check(`laser ${w}×${h}: no horizontal scroll (home + game)`, homeOk && (await noHorizontalScroll()));
+    check(`laser ${w}×${h}: Play and Quit are large enough; the bests fit`, homeFits && s.quitH >= 44 && s.quitBottom <= s.vh);
+    check(`laser ${w}×${h}: HUD values fit, arena below the HUD and on screen`, values && s.field.top >= s.hudBottom && s.field.bottom <= s.vh && s.field.right <= s.vw && s.field.h >= 200, JSON.stringify(s.field));
+    check(`laser ${w}×${h}: the player is visible and ${mobile ? 'touch' : 'mouse'} drag moves it`, s.player.inside && s.player.size >= 12 && Math.abs(s.player.x - (before.x + 50)) < 4 && Math.abs(s.player.y - (before.y - 30)) < 4, `${Math.round(before.x)},${Math.round(before.y)} → ${Math.round(s.player.x)},${Math.round(s.player.y)}`);
+    await click('#ld-quit');
+  }
+  await viewport(390, 844, true);
+}
+
+/** Field, player (centre relative to the field), HUD and Quit positions. */
+function laserScene() {
+  return js(`(() => {
+    const f = document.getElementById('ld-field').getBoundingClientRect();
+    const p = document.getElementById('ld-player').getBoundingClientRect();
+    const hud = document.querySelector('.laser-hud').getBoundingClientRect();
+    const quit = document.getElementById('ld-quit').getBoundingClientRect();
+    const x = p.x + p.width / 2 - f.left, y = p.y + p.height / 2 - f.top;
+    return {
+      field: { left: f.left, top: f.top, right: f.right, bottom: f.bottom, w: f.width, h: f.height },
+      player: { x, y, size: p.width, inside: p.left >= f.left - 0.5 && p.right <= f.right + 0.5 && p.top >= f.top - 0.5 && p.bottom <= f.bottom + 0.5 },
+      hudBottom: hud.bottom, quitH: quit.height, quitBottom: quit.bottom, vw: innerWidth, vh: innerHeight,
+    };
+  })()`);
+}
+
+/**
+ * Step into the next laser and measure one hit: lives just before it fires
+ * (while it charges) and just after. A laser that fires while the player is
+ * still safe from an earlier hit is skipped, so the measurement is exact.
+ */
+async function takeHit() {
+  for (let tries = 0; tries < 8; tries++) {
+    const id = await stepIntoNextLaser();
+    if (!id) return null;
+    await waitFor(`['charge', 'active'].includes(document.querySelector('.ld-laser[data-id="${id}"]')?.dataset.phase) || !document.getElementById('ld-over').hidden`, 3000);
+    const before = await laserLives();
+    const wasSafe = await js(`document.getElementById('ld-player').classList.contains('is-safe')`);
+    await waitFor(`document.querySelector('.ld-laser[data-id="${id}"]')?.dataset.phase === 'active' || !document.getElementById('ld-over').hidden`, 3000);
+    await sleep(120);
+    if (!wasSafe && before > 0) {
+      return { before, after: await laserLives(), fx: await js(`document.getElementById('ld-fx').textContent`), safe: await js(`document.getElementById('ld-player').classList.contains('is-safe')`) };
+    }
+  }
+  return null;
+}
+
+/** Keep stepping into lasers until the run is over. */
+async function loseAllLives() {
+  for (let tries = 0; tries < 12 && (await js(`document.getElementById('ld-over').hidden`)); tries++) {
+    const id = await stepIntoNextLaser();
+    if (!id) break;
+    await waitFor(`document.querySelector('.ld-laser[data-id="${id}"]')?.dataset.phase === 'active' || !document.getElementById('ld-over').hidden`, 3000);
+    await sleep(150);
+  }
+}
+
+function laserLives() { return js(`document.querySelectorAll('#ld-lives i:not(.is-lost)').length`); }
+
+/**
+ * Wait for the next horizontal or vertical laser that is still warning, and
+ * drag the player onto its line. Returns that laser's id.
+ */
+async function stepIntoNextLaser() {
+  const target = await js(`new Promise((resolve) => {
+    const seen = new Set([...document.querySelectorAll('.ld-laser')].map((l) => l.dataset.id));
+    const look = () => {
+      const l = [...document.querySelectorAll('.ld-laser[data-phase="warning"]')].find((n) => !seen.has(n.dataset.id) && (n.dataset.kind === 'h' || n.dataset.kind === 'v'));
+      if (l) resolve({ id: l.dataset.id, kind: l.dataset.kind, x: Number(l.dataset.x), y: Number(l.dataset.y) });
+      else if (!document.getElementById('ld-over').hidden) resolve(null);
+      else setTimeout(look, 20);
+    };
+    look();
+  })`);
+  if (!target) return null;
+  const { player } = await laserScene();
+  await dragBy(target.kind === 'v' ? target.x - player.x : 0, target.kind === 'h' ? target.y - player.y : 0);
+
+  return target.id;
+}
+
+/** Hold a key down for \`ms\`. */
+async function keyHold(name, ms) {
+  const [code, windowsVirtualKeyCode] = keyCode(name);
+  await ws.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: name, code, windowsVirtualKeyCode });
+  await sleep(ms);
+  await ws.send('Input.dispatchKeyEvent', { type: 'keyUp', key: name, code, windowsVirtualKeyCode });
+}
+
+/** Mouse drag inside the Laser Dodge arena, from its centre, by (dx, dy) pixels. */
+async function dragBy(dx, dy) {
+  const c = await js(`(() => { const r = document.getElementById('ld-arena').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+  await ws.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: c.x, y: c.y, button: 'left', buttons: 1, clickCount: 1 });
+  for (let i = 1; i <= 5; i++) {
+    await ws.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: c.x + (dx * i) / 5, y: c.y + (dy * i) / 5, button: 'left', buttons: 1 });
+  }
+  await ws.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: c.x + dx, y: c.y + dy, button: 'left', buttons: 0, clickCount: 1 });
+  await sleep(60);
+}
+
+/** The same with a finger (touch events). */
+async function touchDragBy(dx, dy) {
+  const c = await js(`(() => { const r = document.getElementById('ld-arena').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+  await ws.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: c.x, y: c.y }] });
+  for (let i = 1; i <= 5; i++) {
+    await ws.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: c.x + (dx * i) / 5, y: c.y + (dy * i) / 5 }] });
+  }
+  await ws.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await sleep(60);
+}
+
 // ----- page helpers -----
 
 /** Load a page fresh (via about:blank, so a hash-only change still reloads). Defaults to Color Chaos. */
@@ -1037,10 +1303,15 @@ async function mouse(x, y) {
   await ws.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
 }
 
+/** [code, windowsVirtualKeyCode] for a key name: digits, letters, arrows, Enter, Escape, Space. */
+function keyCode(name) {
+  if (/^\d$/.test(name)) return [`Digit${name}`, 48 + Number(name)];
+  if (/^[a-z]$/i.test(name)) return [`Key${name.toUpperCase()}`, name.toUpperCase().charCodeAt(0)];
+  return { ArrowLeft: ['ArrowLeft', 37], ArrowUp: ['ArrowUp', 38], ArrowRight: ['ArrowRight', 39], ArrowDown: ['ArrowDown', 40], Enter: ['Enter', 13], Escape: ['Escape', 27], ' ': ['Space', 32] }[name];
+}
+
 async function key(name) {
-  const [code, windowsVirtualKeyCode] = /^\d$/.test(name)
-    ? [`Digit${name}`, 48 + Number(name)]
-    : { ArrowLeft: ['ArrowLeft', 37], ArrowUp: ['ArrowUp', 38], ArrowRight: ['ArrowRight', 39], ArrowDown: ['ArrowDown', 40], Enter: ['Enter', 13], Escape: ['Escape', 27], ' ': ['Space', 32] }[name];
+  const [code, windowsVirtualKeyCode] = keyCode(name);
   await ws.send('Input.dispatchKeyEvent', { type: 'keyDown', key: name, code, windowsVirtualKeyCode });
   await ws.send('Input.dispatchKeyEvent', { type: 'keyUp', key: name, code, windowsVirtualKeyCode });
 }
