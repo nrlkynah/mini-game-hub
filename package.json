@@ -2,7 +2,7 @@
   "name": "mini-game-hub",
   "version": "0.1.0",
   "private": true,
-  "description": "Small browser games. First game: Color Chaos, a 60-second colour matching challenge.",
+  "description": "Mini Game Hub: futuristic neon mini games for the browser. No accounts, no backend, no dependencies.",
   "type": "module",
   "scripts": {
     "start": "node scripts/serve.mjs",

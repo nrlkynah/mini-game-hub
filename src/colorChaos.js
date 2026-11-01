@@ -7,16 +7,16 @@
 import { DURATION_MS, WARNING_MS } from './game/config.js';
 import { applyMove, createGame, remainingMs, secondsLeft, tick } from './game/engine.js';
 import { createAudio } from './app/audio.js';
-import { comboTier, createBoardView } from './app/boardView.js';
+import { createBoardView } from './app/boardView.js';
+import { celebrate, comboTier, runCountdown } from './app/effects.js';
+import { settings } from './app/settings.js';
 import { createStorage } from './app/storage.js';
 
-const COUNTDOWN_STEP_MS = 800;
 const TIMES_UP_PAUSE_MS = 1100;
 
 const $ = (id) => document.getElementById(id);
 const storage = createStorage();
 const audio = createAudio();
-const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 const el = {
   screens: { home: $('screen-home'), game: $('screen-game'), results: $('screen-results') },
@@ -54,38 +54,25 @@ let shownScore = null;
 
 const boardView = createBoardView($('board'), $('fx'), { onTap, reducedMotion: isReducedMotion });
 
-// ---------- preferences ----------
-
-let soundOn = storage.getSound();
-let motion = storage.getMotion();
+// ---------- preferences (global settings, shared with every game) ----------
 
 function isReducedMotion() {
-  return motion === 'reduced' || (motion === 'system' && motionQuery.matches);
+  return settings.isReducedMotion();
 }
 
+/** The Sound and Motion toggles on this screen show and change the global settings. */
 function applyPreferences() {
-  audio.setEnabled(soundOn);
-  el.soundToggle.setAttribute('aria-pressed', String(soundOn));
-  el.soundToggle.querySelector('.value').textContent = soundOn ? 'ON' : 'OFF';
-  el.soundToggle.querySelector('.icon').textContent = soundOn ? '🔊' : '🔇';
+  audio.setEnabled(settings.sound);
+  el.soundToggle.setAttribute('aria-pressed', String(settings.sound));
+  el.soundToggle.querySelector('.value').textContent = settings.sound ? 'ON' : 'OFF';
+  el.soundToggle.querySelector('.icon').textContent = settings.sound ? '🔊' : '🔇';
 
-  document.documentElement.dataset.motion = isReducedMotion() ? 'reduced' : 'full';
-  el.motionToggle.querySelector('.value').textContent = { system: 'AUTO', reduced: 'LESS', full: 'FULL' }[motion];
+  el.motionToggle.setAttribute('aria-pressed', String(settings.motion));
+  el.motionToggle.querySelector('.value').textContent = settings.motion ? 'ON' : 'OFF';
 }
 
-el.soundToggle.addEventListener('click', () => {
-  soundOn = !soundOn;
-  storage.setSound(soundOn);
-  applyPreferences();
-});
-
-el.motionToggle.addEventListener('click', () => {
-  motion = { system: 'reduced', reduced: 'full', full: 'system' }[motion];
-  storage.setMotion(motion);
-  applyPreferences();
-});
-
-motionQuery.addEventListener?.('change', applyPreferences);
+el.soundToggle.addEventListener('click', () => settings.setSound(!settings.sound));
+el.motionToggle.addEventListener('click', () => settings.setMotion(!settings.motion));
 
 // ---------- screens ----------
 
@@ -121,26 +108,18 @@ function startRound() {
   updateHud();
   show('game');
 
-  // 3, 2, 1, GO!
-  ['3', '2', '1', 'GO!'].forEach((label, i) => {
-    later(() => {
-      el.countdown.hidden = false;
-      el.countdownNum.textContent = label;
-      el.countdownNum.dataset.label = label; // each step glows in its own colour
-      el.countdownNum.classList.remove('pop');
-      void el.countdownNum.offsetWidth; // restart the pop animation
-      el.countdownNum.classList.add('pop');
-      label === 'GO!' ? audio.go() : audio.countdown();
-    }, i * COUNTDOWN_STEP_MS);
+  runCountdown({
+    overlay: el.countdown,
+    number: el.countdownNum,
+    audio,
+    later,
+    onGo: () => {
+      startedAt = performance.now();
+      boardView.setLocked(false);
+      boardView.focusBoard();
+      frame = requestAnimationFrame(loop);
+    },
   });
-
-  later(() => {
-    el.countdown.hidden = true;
-    startedAt = performance.now();
-    boardView.setLocked(false);
-    boardView.focusBoard();
-    frame = requestAnimationFrame(loop);
-  }, 3 * COUNTDOWN_STEP_MS + 450);
 }
 
 function loop(now) {
@@ -231,7 +210,9 @@ function showResults(final, best, isNewBest) {
 
   if (isNewBest) {
     audio.newBest();
-    celebrate();
+    if (!isReducedMotion()) {
+      celebrate(el.confetti, ['#22f1ff', '#ff2bd6', '#9d5cff', '#a6ff3c', '#3b82ff']);
+    }
   }
 }
 
@@ -257,24 +238,6 @@ function pulse(node, scale = 1.18) {
   node.animate([{ transform: 'scale(1)' }, { transform: `scale(${scale})` }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
 }
 
-function celebrate() {
-  if (isReducedMotion()) {
-    return;
-  }
-  const colors = ['#22f1ff', '#ff2bd6', '#9d5cff', '#a6ff3c', '#3b82ff'];
-  for (let i = 0; i < 40; i++) {
-    const piece = document.createElement('i');
-    piece.style.left = `${(i * 37) % 100}%`;
-    piece.style.background = colors[i % colors.length];
-    piece.style.boxShadow = `0 0 8px ${colors[i % colors.length]}`;
-    el.confetti.append(piece);
-    piece.animate(
-      [{ transform: 'translateY(-20px) rotate(0deg)', opacity: 1 }, { transform: `translateY(${260 + (i % 5) * 40}px) rotate(${360 + i * 25}deg)`, opacity: 0 }],
-      { duration: 1400 + (i % 7) * 120, delay: (i % 10) * 40, easing: 'cubic-bezier(.2,.6,.4,1)' },
-    ).onfinish = () => piece.remove();
-  }
-}
-
 // ---------- buttons ----------
 
 el.play.addEventListener('click', startRound);
@@ -282,7 +245,7 @@ el.again.addEventListener('click', startRound);
 el.home.addEventListener('click', showHome);
 el.quit.addEventListener('click', showHome);
 
-applyPreferences();
+settings.subscribe(applyPreferences);
 
 // ---------- hub interface ----------
 

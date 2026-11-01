@@ -37,5 +37,5 @@ createServer(async (req, res) => {
         res.writeHead(404, { 'Content-Type': 'text/plain' }).end('Not found');
     }
 }).listen(port, '127.0.0.1', () => {
-    console.log(`Color Chaos running at http://127.0.0.1:${port}`);
+    console.log(`Mini Game Hub running at http://127.0.0.1:${port}`);
 });

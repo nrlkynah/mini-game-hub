@@ -5,6 +5,8 @@
 // is unavailable (private mode, blocked), the game still works; it just does
 // not remember anything.
 
+import { readJson, safeCount, safeLocalStorage, writeJson } from './safeStorage.js';
+
 const KEYS = {
   best: 'mgh.colorChaos.best.v1',
   sound: 'mgh.sound',
@@ -35,13 +37,9 @@ export function createStorage(backend = safeLocalStorage()) {
   return {
     /** @returns {{ score: number, combo: number }} */
     getBest() {
-      try {
-        const data = JSON.parse(read(KEYS.best) ?? 'null');
+      const data = readJson(backend, KEYS.best);
 
-        return { score: safeCount(data?.score), combo: safeCount(data?.combo) };
-      } catch {
-        return { score: 0, combo: 0 };
-      }
+      return { score: safeCount(data?.score), combo: safeCount(data?.combo) };
     },
 
     /**
@@ -57,7 +55,7 @@ export function createStorage(backend = safeLocalStorage()) {
         score: Math.max(previous.score, finalScore),
         combo: Math.max(previous.combo, safeCount(bestCombo)),
       };
-      write(KEYS.best, JSON.stringify(best));
+      writeJson(backend, KEYS.best, best);
 
       return { isNewBest, best };
     },
@@ -80,19 +78,6 @@ export function createStorage(backend = safeLocalStorage()) {
       write(KEYS.motion, MOTION_VALUES.includes(value) ? value : 'system');
     },
   };
-}
-
-/** A whole number ≥ 0, or 0 for anything else (NaN, negative, text, huge). */
-function safeCount(value) {
-  return Number.isSafeInteger(value) && value >= 0 ? value : 0;
-}
-
-function safeLocalStorage() {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage;
-  } catch {
-    return null;
-  }
 }
 
 export { KEYS as STORAGE_KEYS };

@@ -2,7 +2,9 @@
 // everything read back is validated, and a missing or blocked localStorage
 // just means nothing is remembered.
 //
-// Sound and motion preferences are shared with Color Chaos (see storage.js).
+// Sound and motion are global settings (see settings.js).
+
+import { readJson, safeCount, safeLocalStorage, writeJson } from './safeStorage.js';
 
 const KEY = 'mgh.neonReflex.best.v1';
 
@@ -13,13 +15,9 @@ export function createReflexStorage(backend = safeLocalStorage()) {
   return {
     /** @returns {{ score: number, reaction: number, combo: number }} reaction 0 = none yet */
     getBest() {
-      try {
-        const data = JSON.parse(backend?.getItem(KEY) ?? 'null');
+      const data = readJson(backend, KEY);
 
-        return { score: safeCount(data?.score), reaction: safeCount(data?.reaction), combo: safeCount(data?.combo) };
-      } catch {
-        return { score: 0, reaction: 0, combo: 0 };
-      }
+      return { score: safeCount(data?.score), reaction: safeCount(data?.reaction), combo: safeCount(data?.combo) };
     },
 
     /**
@@ -40,28 +38,11 @@ export function createReflexStorage(backend = safeLocalStorage()) {
         reaction: isNewReaction ? reaction : previous.reaction,
         combo: Math.max(previous.combo, safeCount(bestCombo)),
       };
-      try {
-        backend?.setItem(KEY, JSON.stringify(best));
-      } catch {
-        // Full or blocked: keep playing without saving.
-      }
+      writeJson(backend, KEY, best);
 
       return { isNewBest, isNewReaction, best };
     },
   };
-}
-
-/** A whole number ≥ 0, or 0 for anything else (NaN, negative, text, huge). */
-function safeCount(value) {
-  return Number.isSafeInteger(value) && value >= 0 ? value : 0;
-}
-
-function safeLocalStorage() {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage;
-  } catch {
-    return null;
-  }
 }
 
 export { KEY as REFLEX_STORAGE_KEY };

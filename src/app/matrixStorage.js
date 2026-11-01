@@ -2,6 +2,8 @@
 // everything read back is validated, and a missing or blocked localStorage
 // just means nothing is remembered.
 
+import { readJson, safeCount, safeLocalStorage, writeJson } from './safeStorage.js';
+
 const KEY = 'mgh.memoryMatrix.best.v1';
 
 /**
@@ -11,13 +13,9 @@ export function createMatrixStorage(backend = safeLocalStorage()) {
   return {
     /** @returns {{ score: number, level: number, streak: number }} level = highest level cleared */
     getBest() {
-      try {
-        const data = JSON.parse(backend?.getItem(KEY) ?? 'null');
+      const data = readJson(backend, KEY);
 
-        return { score: safeCount(data?.score), level: safeCount(data?.level), streak: safeCount(data?.streak) };
-      } catch {
-        return { score: 0, level: 0, streak: 0 };
-      }
+      return { score: safeCount(data?.score), level: safeCount(data?.level), streak: safeCount(data?.streak) };
     },
 
     /**
@@ -35,28 +33,11 @@ export function createMatrixStorage(backend = safeLocalStorage()) {
         level: Math.max(previous.level, safeCount(cleared)),
         streak: Math.max(previous.streak, safeCount(bestStreak)),
       };
-      try {
-        backend?.setItem(KEY, JSON.stringify(best));
-      } catch {
-        // Full or blocked: keep playing without saving.
-      }
+      writeJson(backend, KEY, best);
 
       return { isNewBest, best };
     },
   };
-}
-
-/** A whole number ≥ 0, or 0 for anything else (NaN, negative, text, huge). */
-function safeCount(value) {
-  return Number.isSafeInteger(value) && value >= 0 ? value : 0;
-}
-
-function safeLocalStorage() {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage;
-  } catch {
-    return null;
-  }
 }
 
 export { KEY as MATRIX_STORAGE_KEY };

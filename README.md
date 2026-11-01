@@ -1,6 +1,12 @@
 # Mini Game Hub
 
-Small browser games. No accounts, no backend, no dependencies.
+Futuristic neon mini games for the browser: Color Chaos, Neon Reflex, Memory
+Matrix and Space Tap (Laser Dodge is coming soon). No accounts, no backend,
+no dependencies.
+
+**Settings (⚙ in the top bar):** Sound and Motion, ON/OFF, for every game.
+Saved on the device. Motion ON still follows the device's reduce-motion
+setting; Motion OFF always calms animations (gameplay feedback stays).
 
 ## Color Chaos: 60 second challenge
 
@@ -118,12 +124,16 @@ src/
     targets.js   phase at a moment, next target kind, free spot, keyboard slot
     scoring.js   points × multiplier, accuracy
     engine.js    createSpaceGame / tick(state, now) / tap(state, { at, targetId })
-  app/         browser side
+  app/         browser side, shared by the games where it can be
+    settings.js    global Sound + Motion settings (one shared instance)
+    settingsView.js  the ⚙ Settings dialog
+    effects.js     comboTier, the 3-2-1-GO! countdown, new-best confetti
+    safeStorage.js safe localStorage helpers (never throw, validate numbers)
     boardView.js   draws the Color Chaos board, pointer + keyboard input, effects
     arenaView.js   draws the Neon Reflex arena, target and effects
     matrixView.js  draws the Memory Matrix grid, pointer + keyboard input, effects
     spaceView.js   draws the Space Tap arena, targets and effects
-    storage.js     localStorage (Color Chaos best, sound, motion), validated
+    storage.js     localStorage (Color Chaos best, sound and motion settings), validated
     reflexStorage.js  localStorage (Neon Reflex bests), validated
     matrixStorage.js  localStorage (Memory Matrix bests), validated
     spaceStorage.js   localStorage (Space Tap bests), validated
@@ -149,7 +159,8 @@ scripts/       dev server, checks, browser end-to-end test
   `mgh.spaceTap.best.v1` (score, combo, accuracy), `mgh.sound`
   and `mgh.motion`. Bad or tampered values fall back to defaults.
 - **Sound:** nothing is created until the player presses Play, and sound
-  can be turned off.
+  can be turned off in Settings (or on the Color Chaos screen).
 - **Accessibility:** every colour also has its own shape (● ▲ ■ ◆ ★). Tiles
   are labelled buttons. Arrow keys plus Enter/Space work on the board.
-  `prefers-reduced-motion` is respected, and the Motion toggle can override it.
+  `prefers-reduced-motion` is respected, and Motion OFF in Settings calms
+  animations everywhere.

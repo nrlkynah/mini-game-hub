@@ -5,24 +5,21 @@
 // → memory failed → results. The hub (src/main.js) calls open() and close();
 // best() feeds its game card.
 //
-// Sound and motion follow the preferences set on the Color Chaos screen
-// (shared localStorage keys, and the data-motion attribute on <html>).
+// Sound and motion follow the global settings (src/app/settings.js).
 
 import { FEEDBACK_MS, LIVES } from './matrix/config.js';
 import { accuracy, createMemoryGame, litCount, select, tick } from './matrix/engine.js';
 import { createAudio } from './app/audio.js';
-import { comboTier } from './app/boardView.js';
+import { celebrate, comboTier, runCountdown } from './app/effects.js';
 import { createMatrixStorage } from './app/matrixStorage.js';
 import { createMatrixView, label } from './app/matrixView.js';
-import { createStorage } from './app/storage.js';
+import { settings } from './app/settings.js';
 
-const COUNTDOWN_STEP_MS = 800;
 const OVER_PAUSE_MS = 1400;
 /** After a cleared level, the picked tiles stay lit this long. */
 const AFTERGLOW_MS = 600;
 
 const $ = (id) => document.getElementById(id);
-const preferences = createStorage();
 const storage = createMatrixStorage();
 const audio = createAudio();
 
@@ -68,7 +65,7 @@ let shownPhase = '';
 const view = createMatrixView($('mm-grid'), $('mm-fx'), { onPick, reducedMotion: isReducedMotion });
 
 function isReducedMotion() {
-  return document.documentElement.dataset.motion === 'reduced';
+  return settings.isReducedMotion();
 }
 
 const streakText = (value) => (value > 0 ? `x${value}` : '—');
@@ -95,7 +92,7 @@ function showHome() {
 // ---------- a game ----------
 
 function startRound() {
-  audio.setEnabled(preferences.getSound());
+  audio.setEnabled(settings.sound);
   audio.unlock(); // the Play button press is the user gesture that allows sound
   stopRound();
 
@@ -107,24 +104,16 @@ function startRound() {
   updateHud();
   show('game');
 
-  // 3, 2, 1, GO!
-  ['3', '2', '1', 'GO!'].forEach((text, i) => {
-    later(() => {
-      el.countdown.hidden = false;
-      el.countdownNum.textContent = text;
-      el.countdownNum.dataset.label = text;
-      el.countdownNum.classList.remove('pop');
-      void el.countdownNum.offsetWidth; // restart the pop animation
-      el.countdownNum.classList.add('pop');
-      text === 'GO!' ? audio.go() : audio.countdown();
-    }, i * COUNTDOWN_STEP_MS);
+  runCountdown({
+    overlay: el.countdown,
+    number: el.countdownNum,
+    audio,
+    later,
+    onGo: () => {
+      startedAt = performance.now();
+      frame = requestAnimationFrame(loop);
+    },
   });
-
-  later(() => {
-    el.countdown.hidden = true;
-    startedAt = performance.now();
-    frame = requestAnimationFrame(loop);
-  }, 3 * COUNTDOWN_STEP_MS + 450);
 }
 
 function loop(now) {
@@ -282,7 +271,9 @@ function showResults(final, { best, isNewBest }) {
 
   if (isNewBest) {
     audio.newBest();
-    celebrate();
+    if (!isReducedMotion()) {
+      celebrate(el.confetti, ['#9d5cff', '#22f1ff', '#ff2bd6', '#3b82ff', '#a6ff3c']);
+    }
   }
 }
 
@@ -310,25 +301,6 @@ function pulse(node, scale = 1.18) {
     return;
   }
   node.animate([{ transform: 'scale(1)' }, { transform: `scale(${scale})` }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
-}
-
-/** Holographic confetti for a new best score. */
-function celebrate() {
-  if (isReducedMotion()) {
-    return;
-  }
-  const colors = ['#9d5cff', '#22f1ff', '#ff2bd6', '#3b82ff', '#a6ff3c'];
-  for (let i = 0; i < 40; i++) {
-    const piece = document.createElement('i');
-    piece.style.left = `${(i * 37) % 100}%`;
-    piece.style.background = colors[i % colors.length];
-    piece.style.boxShadow = `0 0 8px ${colors[i % colors.length]}`;
-    el.confetti.append(piece);
-    piece.animate(
-      [{ transform: 'translateY(-20px) rotate(0deg)', opacity: 1 }, { transform: `translateY(${260 + (i % 5) * 40}px) rotate(${360 + i * 25}deg)`, opacity: 0 }],
-      { duration: 1400 + (i % 7) * 120, delay: (i % 10) * 40, easing: 'cubic-bezier(.2,.6,.4,1)' },
-    ).onfinish = () => piece.remove();
-  }
 }
 
 // ---------- buttons ----------

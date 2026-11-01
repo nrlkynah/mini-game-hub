@@ -9,7 +9,7 @@
 // with room for the whole target, so none pokes out of it.
 
 import { KINDS } from '../space/config.js';
-import { comboTier } from './boardView.js';
+import { comboTier } from './effects.js';
 
 /**
  * @param {HTMLElement} field  the arena (receives taps)

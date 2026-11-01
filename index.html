@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#05040f">
     <meta name="description" content="Mini Game Hub: a neon arcade of quick browser games: Color Chaos, Neon Reflex, Memory Matrix and Space Tap.">
-    <title>Mini Game Hub · Your Neon Arcade</title>
+    <title>Mini Game Hub · Futuristic Neon Arcade</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
@@ -22,8 +22,33 @@
     <main class="app">
         <nav class="topbar" aria-label="Main">
             <a class="brand" href="#"><span class="brand-mark" aria-hidden="true">◆</span> Mini Game Hub</a>
-            <a class="btn btn-chip" href="#">Home</a>
+            <div class="topbar-actions">
+                <button id="settings-open" type="button" class="btn btn-chip btn-settings" aria-haspopup="dialog" aria-controls="settings"><span aria-hidden="true">⚙</span><span class="btn-settings-label"> Settings</span></button>
+                <a class="btn btn-chip" href="#">Home</a>
+            </div>
         </nav>
+
+        <!-- Settings: global, for every game -->
+        <dialog id="settings" class="settings" aria-labelledby="settings-title">
+            <form method="dialog" class="settings-panel">
+                <h2 id="settings-title" class="settings-title"><span aria-hidden="true">⚙</span> Settings</h2>
+                <p class="settings-intro">For every game in the hub. Saved on this device.</p>
+
+                <div class="setting">
+                    <span class="setting-icon" aria-hidden="true">🔊</span>
+                    <p class="setting-text"><b id="setting-sound-label">Sound</b><small>Game sounds and beeps</small></p>
+                    <button id="setting-sound" type="button" class="switch" role="switch" aria-checked="true" aria-labelledby="setting-sound-label"><span class="switch-state">ON</span></button>
+                </div>
+                <div class="setting">
+                    <span class="setting-icon" aria-hidden="true">✨</span>
+                    <p class="setting-text"><b id="setting-motion-label">Motion</b><small>Animations and effects</small></p>
+                    <button id="setting-motion" type="button" class="switch" role="switch" aria-checked="true" aria-labelledby="setting-motion-label" aria-describedby="setting-motion-note"><span class="switch-state">ON</span></button>
+                </div>
+                <p id="setting-motion-note" class="settings-note" hidden>Your device asks for reduced motion, so animations stay calm.</p>
+
+                <button id="settings-close" type="submit" value="close" class="btn btn-secondary settings-done">DONE</button>
+            </form>
+        </dialog>
 
         <!-- Hub -->
         <section id="screen-hub" class="screen hub-screen" aria-labelledby="hub-title">
@@ -31,7 +56,7 @@
                 <span class="hub-logo-mini">MINI GAME</span>
                 <span class="hub-logo-hub">HUB</span>
             </h1>
-            <p class="subtitle">Your Neon Arcade</p>
+            <p class="subtitle">Futuristic Neon Arcade</p>
             <div id="hub-games" class="game-grid"></div>
         </section>
 
@@ -62,7 +87,7 @@
 
             <div class="toggles">
                 <button id="sound-toggle" type="button" class="btn btn-chip" aria-pressed="true"><span class="icon" aria-hidden="true">🔊</span> Sound: <span class="value">ON</span></button>
-                <button id="motion-toggle" type="button" class="btn btn-chip" title="Animations: follow device setting, less, or full"><span aria-hidden="true">✨</span> Motion: <span class="value">AUTO</span></button>
+                <button id="motion-toggle" type="button" class="btn btn-chip" aria-pressed="true" title="Animations on or off, for every game (also in ⚙ Settings)"><span aria-hidden="true">✨</span> Motion: <span class="value">ON</span></button>
             </div>
         </section>
 

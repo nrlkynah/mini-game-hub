@@ -9,9 +9,14 @@ import * as memoryMatrix from './memoryMatrix.js';
 import * as neonReflex from './neonReflex.js';
 import * as spaceTap from './spaceTap.js';
 import { createHub } from './hub.js';
+import { createSettingsView } from './app/settingsView.js';
 
 /** Playable games by registry id (see src/games.js). */
 const players = { 'color-chaos': colorChaos, 'neon-reflex': neonReflex, 'memory-matrix': memoryMatrix, 'space-tap': spaceTap };
+
+const $ = (id) => document.getElementById(id);
+
+createSettingsView({ open: $('settings-open'), dialog: $('settings'), sound: $('setting-sound'), motion: $('setting-motion'), motionNote: $('setting-motion-note') });
 
 const hubScreen = document.getElementById('screen-hub');
 const hub = createHub(document.getElementById('hub-games'), players);
@@ -34,7 +39,7 @@ function route() {
     document.title = `${document.querySelector(`[data-game="${next}"] .game-title`).textContent} · Mini Game Hub`;
     players[next].open();
   } else {
-    document.title = 'Mini Game Hub · Your Neon Arcade';
+    document.title = 'Mini Game Hub · Futuristic Neon Arcade';
     hub.refresh();
   }
 }

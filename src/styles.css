@@ -1,4 +1,5 @@
-/* Color Chaos: futuristic neon arcade. Dark, glowing, electric, playful. Mobile first. */
+/* Mini Game Hub: futuristic neon arcade. Dark, glowing, electric, playful. Mobile first.
+   Shared look first, then one section per game. */
 
 :root {
     --bg-0: #04030c;
@@ -245,6 +246,102 @@ button { font: inherit; color: inherit; }
 .brand-mark { color: var(--magenta); text-shadow: 0 0 10px var(--magenta); }
 .topbar .btn-chip { display: inline-flex; align-items: center; text-decoration: none; }
 .is-hub .topbar .btn-chip { border-color: rgba(34, 241, 255, 0.6); color: var(--cyan); box-shadow: 0 0 12px rgba(34, 241, 255, 0.25); }
+.topbar-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.btn-settings { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; padding: 0 14px; font-size: 0.72rem; }
+.btn-settings > span[aria-hidden] { font-size: 1.05rem; line-height: 1; }
+.is-hub .topbar .btn-settings { color: #f2e6ff; border-color: rgba(157, 92, 255, 0.7); box-shadow: 0 0 14px rgba(157, 92, 255, 0.35); }
+/* Narrow phones: just the ⚙ icon (the word stays for screen readers) */
+@media (max-width: 419px) {
+    .btn-settings { padding: 0; }
+    .btn-settings-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+
+/* ---------- settings dialog ---------- */
+
+.settings {
+    width: min(100% - 32px, 400px);
+    max-height: calc(100dvh - 32px);
+    padding: 0;
+    border: 1px solid rgba(157, 92, 255, 0.6);
+    border-radius: 18px;
+    color: var(--ink);
+    background: linear-gradient(180deg, rgba(32, 24, 82, 0.97), rgba(10, 8, 30, 0.98));
+    box-shadow: 0 0 0 1px rgba(34, 241, 255, 0.2), 0 0 40px rgba(157, 92, 255, 0.35), 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+.settings::backdrop { background: rgba(4, 3, 12, 0.72); backdrop-filter: blur(3px); }
+.settings[open] { animation: screen-in 0.25s ease-out; }
+.settings-panel { display: flex; flex-direction: column; gap: 12px; padding: 22px 20px 20px; }
+.settings-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 1.3rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #f2e6ff;
+    text-shadow: 0 0 10px var(--purple), 0 0 24px rgba(157, 92, 255, 0.6);
+}
+.settings-intro, .settings-note { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.settings-note { color: #ffe9a8; }
+.setting {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(5, 4, 16, 0.45);
+}
+.setting-icon { font-size: 1.4rem; }
+.setting-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; margin: 0; }
+.setting-text b { font-family: var(--font-display); font-weight: 800; font-size: 0.85rem; letter-spacing: 0.18em; text-transform: uppercase; }
+.setting-text small { font-size: 0.8rem; color: var(--muted); }
+
+/* ON / OFF switch */
+.switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 84px;
+    height: 44px;
+    padding: 0 12px 0 0;
+    border: 1px solid rgba(166, 255, 60, 0.7);
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-align: right;
+    color: #efffd8;
+    background: rgba(166, 255, 60, 0.18);
+    box-shadow: 0 0 12px rgba(166, 255, 60, 0.35), inset 0 0 10px rgba(166, 255, 60, 0.2);
+    transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    touch-action: manipulation;
+}
+.switch::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--lime);
+    box-shadow: 0 0 10px var(--lime);
+    transition: transform 0.2s ease, background-color 0.2s;
+}
+.switch[aria-checked="false"] {
+    padding: 0 0 0 12px;
+    text-align: left;
+    color: var(--muted);
+    border-color: rgba(156, 165, 216, 0.45);
+    background: rgba(14, 11, 40, 0.8);
+    box-shadow: none;
+}
+.switch[aria-checked="false"]::before { transform: translateX(40px); background: #5c6290; box-shadow: none; }
+.switch[aria-checked="false"] .switch-state { margin-left: 0; }
+.switch .switch-state { position: relative; }
+.settings-done { width: 100%; margin-top: 4px; }
 
 .back-link {
     align-self: flex-start;
@@ -362,7 +459,7 @@ button { font: inherit; color: inherit; }
 }
 
 /* Locked cards: dimmed, striped, with a status tag */
-.game-card.is-locked { border-style: dashed; }
+.game-card.is-locked { border-style: dashed; box-shadow: none; opacity: 0.82; }
 .game-card.is-locked::after {
     content: '';
     position: absolute;
@@ -443,6 +540,12 @@ button { font: inherit; color: inherit; }
 }
 
 .game-card.is-wide { grid-column: 1 / -1; }
+
+/* Tablets: the playable games two across. */
+@media (min-width: 640px) and (max-width: 1023px) {
+    .game-card.is-playable { grid-column: span 1; }
+    .game-card.is-playable .game-title { font-size: 1.45rem; }
+}
 
 /* Wide screens: the playable games three across, the locked ones two across below. */
 @media (min-width: 1024px) {
@@ -1597,3 +1700,5 @@ button { font: inherit; color: inherit; }
     transition-duration: 0.001ms !important;
 }
 [data-motion="reduced"] .hud-timer.is-urgent b { animation: none; text-decoration: underline; }
+/* Gameplay feedback keeps running with reduced motion: how long a Space Tap target has left. */
+[data-motion="reduced"] .st-life { animation-duration: var(--life) !important; }

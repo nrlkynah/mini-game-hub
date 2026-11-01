@@ -2,6 +2,8 @@
 // everything read back is validated, and a missing or blocked localStorage
 // just means nothing is remembered.
 
+import { readJson, safeCount, safeLocalStorage, writeJson } from './safeStorage.js';
+
 const KEY = 'mgh.spaceTap.best.v1';
 
 /**
@@ -11,13 +13,9 @@ export function createSpaceStorage(backend = safeLocalStorage()) {
   return {
     /** @returns {{ score: number, combo: number, accuracy: number }} accuracy in %, 0 = none yet */
     getBest() {
-      try {
-        const data = JSON.parse(backend?.getItem(KEY) ?? 'null');
+      const data = readJson(backend, KEY);
 
-        return { score: safeCount(data?.score), combo: safeCount(data?.combo), accuracy: Math.min(safeCount(data?.accuracy), 100) };
-      } catch {
-        return { score: 0, combo: 0, accuracy: 0 };
-      }
+      return { score: safeCount(data?.score), combo: safeCount(data?.combo), accuracy: Math.min(safeCount(data?.accuracy), 100) };
     },
 
     /**
@@ -36,28 +34,11 @@ export function createSpaceStorage(backend = safeLocalStorage()) {
         combo: Math.max(previous.combo, safeCount(bestCombo)),
         accuracy: safeCount(hits) > 0 ? Math.max(previous.accuracy, Math.min(safeCount(accuracy), 100)) : previous.accuracy,
       };
-      try {
-        backend?.setItem(KEY, JSON.stringify(best));
-      } catch {
-        // Full or blocked: keep playing without saving.
-      }
+      writeJson(backend, KEY, best);
 
       return { isNewBest, best };
     },
   };
-}
-
-/** A whole number ≥ 0, or 0 for anything else (NaN, negative, text, huge). */
-function safeCount(value) {
-  return Number.isSafeInteger(value) && value >= 0 ? value : 0;
-}
-
-function safeLocalStorage() {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage;
-  } catch {
-    return null;
-  }
 }
 
 export { KEY as SPACE_STORAGE_KEY };

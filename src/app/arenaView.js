@@ -8,7 +8,7 @@
 // Positions come in as x, y in [0, 1); the CSS maps them inside the field
 // with room for the whole target, so it never pokes out of the arena.
 
-import { comboTier } from './boardView.js';
+import { comboTier } from './effects.js';
 
 /**
  * @param {HTMLElement} field   the arena (receives presses)

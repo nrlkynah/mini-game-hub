@@ -56,7 +56,7 @@ mkdirSync(OUT, { recursive: true });
 const server = spawn(process.execPath, ['scripts/serve.mjs', String(PORT)], { stdio: 'ignore' });
 const browser = spawn(BROWSER, [
   '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check', '--mute-audio',
-  `--remote-debugging-port=${DEBUG_PORT}`, `--user-data-dir=${mkdtempSync(join(tmpdir(), 'cc-e2e-'))}`, 'about:blank',
+  `--remote-debugging-port=${DEBUG_PORT}`, `--user-data-dir=${mkdtempSync(join(tmpdir(), 'mgh-e2e-'))}`, 'about:blank',
 ], { stdio: 'ignore' });
 
 let ws;
@@ -111,6 +111,8 @@ async function run() {
   await click('#back-to-hub');
   await sleep(200);
   check('Back to Hub returns to the hub', await js(`!document.getElementById('screen-hub').hidden && document.getElementById('screen-home').hidden`));
+
+  await runSettings();
 
   if (!ONLY || ONLY === 'color-chaos') {
     await runColorChaos();
@@ -240,12 +242,15 @@ async function runColorChaos() {
   await sleep(200);
   check('the game still plays with reduced motion', Number((await text('score')).replace(/,/g, '')) > 0);
   await click('#quit');
-  await click('#motion-toggle'); // AUTO → LESS
-  await click('#motion-toggle'); // LESS → FULL
-  await open();
-  check('the Motion toggle overrides the device setting and is remembered', (await js('document.documentElement.dataset.motion')) === 'full' && (await text('motion-toggle')).includes('FULL'));
-  await js(`localStorage.removeItem('mgh.motion')`);
   await ws.send('Emulation.setEmulatedMedia', { features: [] });
+  await open();
+  check('Motion ON follows the device again once it stops asking for less', (await js('document.documentElement.dataset.motion')) === 'full' && (await text('motion-toggle')).includes('ON'));
+  await click('#motion-toggle'); // ON → OFF
+  await open();
+  check('the Motion toggle turns animations off and is remembered', (await js('document.documentElement.dataset.motion')) === 'reduced' && (await text('motion-toggle')).includes('OFF') && (await js(`localStorage.getItem('mgh.motion')`)) === 'reduced');
+  await click('#motion-toggle'); // OFF → ON
+  check('the Motion toggle turns animations back on', (await js('document.documentElement.dataset.motion')) === 'full');
+  await js(`localStorage.removeItem('mgh.motion')`);
 
   // ----- layout at several sizes -----
   for (const [w, h, mobile] of [[360, 640, true], [390, 844, true], [768, 1024, true], [1280, 800, false]]) {
@@ -284,6 +289,74 @@ async function runColorChaos() {
   const moved = await js(`document.activeElement?.dataset.col === '1'`);
   check('keyboard: a tile is focused and arrow keys move', focused && moved);
   await click('#quit');
+}
+
+// ----- Settings (global Sound + Motion) -----
+
+async function runSettings() {
+  await viewport(390, 844, true);
+  await open(URL_ROOT);
+  const button = await js(`(() => { const s = document.getElementById('settings-open').getBoundingClientRect(); const b = document.querySelector('.brand').getBoundingClientRect(); return { w: s.width, h: s.height, clear: b.right <= s.left, visible: s.right <= innerWidth && s.top >= 0 }; })()`);
+  check('settings: the hub has a Settings button, easy to tap and clear of the title', button.w >= 44 && button.h >= 44 && button.clear && button.visible, JSON.stringify(button));
+  check('settings: Sound and Motion start ON', (await js(`document.getElementById('setting-sound').getAttribute('aria-checked') + document.getElementById('setting-motion').getAttribute('aria-checked')`)) === 'truetrue');
+
+  await click('#settings-open');
+  check('settings: the dialog opens with focus on the first switch', await js(`document.getElementById('settings').open && document.activeElement?.id === 'setting-sound'`));
+  await shot('40-settings-390');
+  await click('#setting-sound');
+  await click('#setting-motion');
+  check('settings: switching Sound and Motion OFF updates the switches and saves them',
+    (await text('setting-sound')) === 'OFF' && (await text('setting-motion')) === 'OFF'
+      && (await js(`localStorage.getItem('mgh.sound') + '/' + localStorage.getItem('mgh.motion')`)) === 'off/reduced');
+  check('settings: Motion OFF calms animations right away', (await js('document.documentElement.dataset.motion')) === 'reduced');
+  await key('Escape');
+  check('settings: Escape closes the dialog and focus returns to the button', await js(`!document.getElementById('settings').open && document.activeElement?.id === 'settings-open'`));
+
+  await open(URL_ROOT);
+  check('settings: they are remembered after a refresh', (await text('setting-sound')) === 'OFF' && (await text('setting-motion')) === 'OFF' && (await js('document.documentElement.dataset.motion')) === 'reduced');
+
+  // Every game uses them.
+  await open(`${URL_ROOT}#color-chaos`);
+  check('settings: the Color Chaos toggles show the same global settings', (await text('sound-toggle')).includes('OFF') && (await text('motion-toggle')).includes('OFF'));
+  await open(REFLEX_URL);
+  await click('#nr-play');
+  await sleep(300);
+  check('settings: with Sound OFF a game makes no sound at all (no audio context)', await js('!window.__audioCreated'));
+  check('settings: Motion OFF reaches the games too', (await js('document.documentElement.dataset.motion')) === 'reduced');
+  await click('#nr-quit');
+  await click('#settings-open');
+  check('settings: Settings can be opened from a game\'s home screen', await js(`document.getElementById('settings').open`));
+  await click('#setting-sound');
+  await click('#setting-motion');
+  await click('#settings-close');
+  check('settings: switching back ON works', (await js(`localStorage.getItem('mgh.sound') + '/' + localStorage.getItem('mgh.motion')`)) === 'on/system' && (await js('document.documentElement.dataset.motion')) === 'full' && !(await js(`document.getElementById('settings').open`)));
+
+  // The hub and the dialog at every size.
+  for (const [w, h, mobile] of [[360, 640, true], [390, 844, true], [768, 1024, true], [1280, 800, false]]) {
+    await viewport(w, h, mobile);
+    await open(URL_ROOT);
+    await sleep(500); // let the cards finish sliding in
+    const hub = await js(`(() => {
+      const r = (el) => el.getBoundingClientRect();
+      const brand = r(document.querySelector('.brand')), gear = r(document.getElementById('settings-open')), home = r(document.querySelector('.topbar-actions a'));
+      const title = r(document.getElementById('hub-title'));
+      const lines = [...document.querySelectorAll('#hub-title span')].map((s) => s.getClientRects().length);
+      const playable = [...document.querySelectorAll('.game-card.is-playable')].map(r);
+      const plays = [...document.querySelectorAll('.game-card .btn-play')].map(r);
+      return {
+        bar: brand.right <= gear.left && gear.right <= home.left && home.right <= innerWidth,
+        title: title.right <= innerWidth && lines.every((n) => n === 1),
+        cards: playable.length === 4 && playable.every((c) => c.right <= innerWidth + 0.5 && c.left >= -0.5),
+        buttons: plays.every((b) => b.height >= 44),
+      };
+    })()`);
+    await click('#settings-open');
+    const dialog = await js(`(() => { const d = document.getElementById('settings').getBoundingClientRect(); const s = [...document.querySelectorAll('.switch')]; return d.left >= 0 && d.right <= innerWidth && d.bottom <= innerHeight && s.every((b) => b.offsetHeight >= 44 && b.offsetWidth >= 44); })()`);
+    await shot(`41-settings-${w}`);
+    await key('Escape');
+    check(`settings ${w}×${h}: top bar, title and cards fit; the dialog fits; no horizontal scroll`, hub.bar && hub.title && hub.cards && hub.buttons && dialog && (await noHorizontalScroll()), JSON.stringify({ ...hub, dialog }));
+  }
+  await viewport(390, 844, true);
 }
 
 // ----- Neon Reflex -----
@@ -967,7 +1040,7 @@ async function mouse(x, y) {
 async function key(name) {
   const [code, windowsVirtualKeyCode] = /^\d$/.test(name)
     ? [`Digit${name}`, 48 + Number(name)]
-    : { ArrowLeft: ['ArrowLeft', 37], ArrowUp: ['ArrowUp', 38], ArrowRight: ['ArrowRight', 39], ArrowDown: ['ArrowDown', 40], Enter: ['Enter', 13], ' ': ['Space', 32] }[name];
+    : { ArrowLeft: ['ArrowLeft', 37], ArrowUp: ['ArrowUp', 38], ArrowRight: ['ArrowRight', 39], ArrowDown: ['ArrowDown', 40], Enter: ['Enter', 13], Escape: ['Escape', 27], ' ': ['Space', 32] }[name];
   await ws.send('Input.dispatchKeyEvent', { type: 'keyDown', key: name, code, windowsVirtualKeyCode });
   await ws.send('Input.dispatchKeyEvent', { type: 'keyUp', key: name, code, windowsVirtualKeyCode });
 }

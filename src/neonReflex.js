@@ -4,22 +4,19 @@
 // Screens: home → countdown (3, 2, 1, GO!) → 10 rounds → complete → results.
 // The hub (src/main.js) calls open() and close(); best() feeds its game card.
 //
-// Sound and motion follow the preferences set on the Color Chaos screen
-// (shared localStorage keys, and the data-motion attribute on <html>).
+// Sound and motion follow the global settings (src/app/settings.js).
 
 import { ROUNDS } from './reflex/config.js';
 import { averageReaction, bestReaction, createReflexGame, press, tick } from './reflex/engine.js';
 import { createArenaView } from './app/arenaView.js';
 import { createAudio } from './app/audio.js';
-import { comboTier } from './app/boardView.js';
+import { celebrate, comboTier, runCountdown } from './app/effects.js';
 import { createReflexStorage } from './app/reflexStorage.js';
-import { createStorage } from './app/storage.js';
+import { settings } from './app/settings.js';
 
-const COUNTDOWN_STEP_MS = 800;
 const DONE_PAUSE_MS = 1100;
 
 const $ = (id) => document.getElementById(id);
-const preferences = createStorage();
 const storage = createReflexStorage();
 const audio = createAudio();
 
@@ -59,7 +56,7 @@ let timers = [];
 const arena = createArenaView($('nr-field'), $('nr-fx'), $('nr-target'), { onPress, reducedMotion: isReducedMotion });
 
 function isReducedMotion() {
-  return document.documentElement.dataset.motion === 'reduced';
+  return settings.isReducedMotion();
 }
 
 const ms = (value) => (value ? `${value} ms` : '—');
@@ -88,7 +85,7 @@ function showHome() {
 // ---------- a game ----------
 
 function startRound() {
-  audio.setEnabled(preferences.getSound());
+  audio.setEnabled(settings.sound);
   audio.unlock(); // the Play button press is the user gesture that allows sound
   stopRound();
 
@@ -98,26 +95,18 @@ function startRound() {
   updateHud();
   show('game');
 
-  // 3, 2, 1, GO!
-  ['3', '2', '1', 'GO!'].forEach((label, i) => {
-    later(() => {
-      el.countdown.hidden = false;
-      el.countdownNum.textContent = label;
-      el.countdownNum.dataset.label = label;
-      el.countdownNum.classList.remove('pop');
-      void el.countdownNum.offsetWidth; // restart the pop animation
-      el.countdownNum.classList.add('pop');
-      label === 'GO!' ? audio.go() : audio.countdown();
-    }, i * COUNTDOWN_STEP_MS);
+  runCountdown({
+    overlay: el.countdown,
+    number: el.countdownNum,
+    audio,
+    later,
+    onGo: () => {
+      startedAt = performance.now();
+      arena.setLocked(false);
+      arena.focus();
+      frame = requestAnimationFrame(loop);
+    },
   });
-
-  later(() => {
-    el.countdown.hidden = true;
-    startedAt = performance.now();
-    arena.setLocked(false);
-    arena.focus();
-    frame = requestAnimationFrame(loop);
-  }, 3 * COUNTDOWN_STEP_MS + 450);
 }
 
 function loop(now) {
@@ -208,7 +197,9 @@ function showResults(final, { best, isNewBest, isNewReaction }) {
 
   if (isNewBest) {
     audio.newBest();
-    celebrate();
+    if (!isReducedMotion()) {
+      celebrate(el.confetti, ['#ff2bd6', '#3b82ff', '#22f1ff', '#9d5cff', '#a6ff3c']);
+    }
   }
 }
 
@@ -233,25 +224,6 @@ function pulse(node, scale = 1.18) {
     return;
   }
   node.animate([{ transform: 'scale(1)' }, { transform: `scale(${scale})` }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
-}
-
-/** Lightning-coloured confetti for a new best score. */
-function celebrate() {
-  if (isReducedMotion()) {
-    return;
-  }
-  const colors = ['#ff2bd6', '#3b82ff', '#22f1ff', '#9d5cff', '#a6ff3c'];
-  for (let i = 0; i < 40; i++) {
-    const piece = document.createElement('i');
-    piece.style.left = `${(i * 37) % 100}%`;
-    piece.style.background = colors[i % colors.length];
-    piece.style.boxShadow = `0 0 8px ${colors[i % colors.length]}`;
-    el.confetti.append(piece);
-    piece.animate(
-      [{ transform: 'translateY(-20px) rotate(0deg)', opacity: 1 }, { transform: `translateY(${260 + (i % 5) * 40}px) rotate(${360 + i * 25}deg)`, opacity: 0 }],
-      { duration: 1400 + (i % 7) * 120, delay: (i % 10) * 40, easing: 'cubic-bezier(.2,.6,.4,1)' },
-    ).onfinish = () => piece.remove();
-  }
 }
 
 // ---------- buttons ----------

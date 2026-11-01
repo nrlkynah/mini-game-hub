@@ -6,6 +6,7 @@
 // Enter/Space.
 
 import { COLORS, COLS, ROWS } from '../game/config.js';
+import { comboTier } from './effects.js';
 
 /**
  * @param {HTMLElement} root  the board element
@@ -212,18 +213,6 @@ export function createBoardView(root, fx, { onTap, reducedMotion }) {
   }
 
   return { render, showMatch, showCombo, showInvalid, setLocked, focusBoard };
-}
-
-/** How loud the combo effects are: 0 none, 1 x2–x4, 2 x5–x9, 3 x10. */
-export function comboTier(combo) {
-  if (combo >= 10) {
-    return 3;
-  }
-  if (combo >= 5) {
-    return 2;
-  }
-
-  return combo >= 2 ? 1 : 0;
 }
 
 function clamp(value, size) {
