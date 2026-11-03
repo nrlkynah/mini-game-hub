@@ -374,6 +374,19 @@ async function runProfile() {
   check('profile: a new player starts at 0 with all 10 achievements locked',
     empty.played === '0' && empty.completed === '0' && empty.total === '0' && empty.best === '0' && empty.mastered === '0 / 5' && empty.items === 10 && empty.locked === 10 && empty.count === '0 / 10');
   await shot('60-profile-empty-390');
+  check('profile: the best score label reads All-Time Best', (await js(`document.getElementById('profile-best').previousElementSibling.textContent.trim()`)) === 'All-Time Best');
+
+  // ----- a game opened and quit: played, not completed, nothing unlocked -----
+  await open(SPACE_URL);
+  await click('#st-play');
+  await waitFor(`!document.getElementById('st-field').classList.contains('is-locked')`, 5000);
+  await click('#st-quit');
+  check('profile: quitting a game shows no achievement toast', (await js(`document.getElementById('toasts').textContent`)) === '');
+  await click('#screen-space-home .back-link');
+  await sleep(250);
+  const afterQuit = await profileOnHub();
+  check('profile: launch + quit counts as played only: no First Play, no score, no Games Mastered',
+    afterQuit.played === '1' && afterQuit.completed === '0' && afterQuit.total === '0' && afterQuit.mastered === '0 / 5' && afterQuit.unlocked.length === 0, JSON.stringify(afterQuit));
 
   // ----- one game, played to the end: a quick Memory Matrix run (clear level 1, then three mistakes) -----
   await click('[data-testid="play-memory-matrix"]');
@@ -387,23 +400,28 @@ async function runProfile() {
   await waitFor(`!document.getElementById('screen-matrix-results').hidden`, 4000);
   await shot('61-profile-toast-390');
   const score = await text('mm-res-score');
-  check('profile: the toast does not block the results buttons', await js(`getComputedStyle(document.getElementById('toasts')).pointerEvents === 'none'`));
+  check('profile: the toast does not cover or block the results buttons', await js(`(() => {
+    const t = document.querySelector('#toasts .toast');
+    return getComputedStyle(document.getElementById('toasts')).pointerEvents === 'none' && t !== null
+      && ['mm-again', 'mm-home'].every((id) => !overlaps(t, document.getElementById(id)));
+    function overlaps(a, b) { const x = a.getBoundingClientRect(), y = b.getBoundingClientRect(); return x.left < y.right && y.left < x.right && x.top < y.bottom && y.top < x.bottom; }
+  })()`));
   await click('#mm-home');
   await sleep(250);
+  const toastOnHub = await js(`(() => {
+    const t = document.querySelector('#toasts .toast');
+    if (!t) return { shown: false };
+    const r = t.getBoundingClientRect(), bar = document.querySelector('.topbar').getBoundingClientRect();
+    const overlaps = (sel) => [...document.querySelectorAll(sel)].some((el) => { const y = el.getBoundingClientRect(); return r.left < y.right && y.left < r.right && r.top < y.bottom && y.top < r.bottom; });
+    return { shown: true, list: overlaps('#achievement-list'), profile: overlaps('#profile'), bar: r.top < bar.bottom, inside: r.left >= 0 && r.right <= innerWidth };
+  })()`);
+  check('profile: on the hub the toast sits under the top bar, clear of the profile and achievements', toastOnHub.shown && !toastOnHub.list && !toastOnHub.profile && !toastOnHub.bar && toastOnHub.inside, JSON.stringify(toastOnHub));
+  await shot('61-profile-toast-hub-390');
   const afterGame = await profileOnHub();
-  check('profile: back on the hub, the stats show the game', afterGame.played === '1' && afterGame.completed === '1' && afterGame.total === score && afterGame.best === score && Number(score.replace(/,/g, '')) >= 100, JSON.stringify(afterGame));
+  check('profile: back on the hub, the stats show the finished game and Games Mastered 1 / 5',
+    afterGame.played === '2' && afterGame.completed === '1' && afterGame.total === score && afterGame.best === score && afterGame.mastered === '1 / 5' && Number(score.replace(/,/g, '')) >= 100, JSON.stringify(afterGame));
   check('profile: First Play is unlocked and the rest stay locked', afterGame.unlocked.join() === 'first-play' && afterGame.locked === 9 && afterGame.count === '1 / 10');
   await shot('62-profile-after-390');
-
-  // ----- a game left early counts as played, not completed -----
-  await open(SPACE_URL);
-  await click('#st-play');
-  await waitFor(`!document.getElementById('st-field').classList.contains('is-locked')`, 5000);
-  await click('#st-quit');
-  await click('#screen-space-home .back-link');
-  await sleep(250);
-  const afterQuit = await profileOnHub();
-  check('profile: a game quit early counts as played but not completed, and adds no score', afterQuit.played === '2' && afterQuit.completed === '1' && afterQuit.total === score, JSON.stringify(afterQuit));
 
   // ----- persistence -----
   await open(URL_ROOT);
@@ -427,7 +445,8 @@ async function runProfile() {
   await click('#profile-reset');
   await click('#reset-confirm');
   const cleared = await profileOnHub();
-  check('profile: Reset clears the profile and achievements', cleared.played === '0' && cleared.completed === '0' && cleared.total === '0' && cleared.locked === 10, JSON.stringify(cleared));
+  check('profile: Reset clears the profile, Games Mastered and achievements', cleared.played === '0' && cleared.completed === '0' && cleared.total === '0' && cleared.mastered === '0 / 5' && cleared.locked === 10, JSON.stringify(cleared));
+  check('profile: All-Time Best stays after Reset (from the games\' own bests)', cleared.best === score, cleared.best);
   check('profile: Reset keeps each game\'s best and the Sound setting', (await js(`localStorage.getItem('mgh.memoryMatrix.best.v1')`)) === matrixBest && matrixBest !== null && (await js(`localStorage.getItem('mgh.sound')`)) === 'off'
     && (await js(`document.querySelector('[data-game="memory-matrix"] .game-best b').textContent`)) === score);
   await open(URL_ROOT);

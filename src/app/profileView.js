@@ -73,7 +73,7 @@ export function createProfileView(el) {
       reduced
         ? [{ opacity: 1 }, { opacity: 1, offset: 0.92 }, { opacity: 0 }]
         : [
-          { transform: 'translateY(16px)', opacity: 0 },
+          { transform: 'translateY(-12px)', opacity: 0 },
           { transform: 'translateY(0)', opacity: 1, offset: 0.08 },
           { transform: 'translateY(0)', opacity: 1, offset: 0.9 },
           { transform: 'translateY(-8px)', opacity: 0 },

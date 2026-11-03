@@ -32,6 +32,8 @@ const BEST_KEYS = {
  * is recorded: `profile` is the updated profile, `result` the game just
  * reported (with `previousBest`, that game's best before it).
  *
+ * Only finished games count: opening a game and quitting it unlocks nothing.
+ *
  * Game milestones were picked from each game's real rules:
  * - Color Chaos: the combo caps at x10 and needs a match every 2.5 s, so x8 is a strong run.
  * - Neon Reflex: GREAT is under 350 ms, and the pointer has to travel to the target too.
@@ -40,9 +42,9 @@ const BEST_KEYS = {
  * - Laser Dodge: 30 s is where EXTREME begins.
  */
 export const ACHIEVEMENTS = [
-  { id: 'first-play', icon: '🎮', title: 'First Play', description: 'Play your first game', unlocks: (p) => p.played >= 1 },
-  { id: 'arcade-regular', icon: '🕹️', title: 'Arcade Regular', description: 'Play 10 game sessions', unlocks: (p) => p.played >= 10 },
-  { id: 'five-of-five', icon: '🖐️', title: 'Five of Five', description: 'Play all 5 games', unlocks: (p) => GAME_IDS.every((id) => p.games[id].played > 0) },
+  { id: 'first-play', icon: '🎮', title: 'First Play', description: 'Finish your first game', unlocks: (p) => p.completed >= 1 },
+  { id: 'arcade-regular', icon: '🕹️', title: 'Arcade Regular', description: 'Finish 10 games', unlocks: (p) => p.completed >= 10 },
+  { id: 'five-of-five', icon: '🖐️', title: 'Five of Five', description: 'Finish each of the 5 games', unlocks: (p) => GAME_IDS.every((id) => p.games[id].completed > 0) },
   { id: 'high-score', icon: '📈', title: 'High Score', description: 'Beat your own best score in any game', unlocks: (p, r) => r.completed && r.previousBest > 0 && r.score > r.previousBest },
   { id: 'all-star', icon: '⭐', title: 'All-Star', description: 'Set a best score in all 5 games', unlocks: (p) => GAME_IDS.every((id) => p.games[id].best > 0) },
   { id: 'chain-reaction', game: 'color-chaos', icon: '🌈', title: 'Chain Reaction', description: 'Reach a x8 combo in Color Chaos', unlocks: (p, r) => is(r, 'color-chaos') && r.metadata.bestCombo >= 8 },
@@ -56,6 +58,15 @@ const ACHIEVEMENT_IDS = ACHIEVEMENTS.map((a) => a.id);
 
 function is(result, gameId) {
   return result.gameId === gameId && result.completed;
+}
+
+/**
+ * A game counts towards Games Mastered once a finished game in it set a best
+ * score. Bests carried over from before the profile (or after a reset) show in
+ * All-Time Best, but only count here once that game is finished again.
+ */
+function isMastered(game) {
+  return game.completed > 0 && game.best > 0;
 }
 
 /**
@@ -92,7 +103,7 @@ export function createProfile(backend = safeLocalStorage()) {
         totalScore: state.totalScore,
         bestOverall: Math.max(0, ...bests),
         games: structuredClone(state.games),
-        mastered: ACHIEVEMENTS.filter((a) => a.game && state.achievements[a.id]).length,
+        mastered: GAME_IDS.filter((id) => isMastered(state.games[id])).length,
         gameCount: GAME_IDS.length,
         achievements: ACHIEVEMENTS.map(({ unlocks, ...a }) => ({ ...a, unlocked: Boolean(state.achievements[a.id]), unlockedAt: state.achievements[a.id] ?? null })),
       };

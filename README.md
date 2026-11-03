@@ -8,17 +8,18 @@ Saved on the device. Motion ON still follows the device's reduce-motion
 setting; Motion OFF always calms animations (gameplay feedback stays).
 
 **Arcade Profile (on the hub):** games played and completed, total score,
-best overall score and games mastered, across all five games. A game left
-early counts as played but adds no score. 10 achievements, saved with the
+all-time best score and games mastered (games finished with a best score),
+across all five games. A game left early counts as played but adds no score
+and unlocks nothing. 10 achievements, saved with the
 time they unlocked; a small toast shows each new one without stopping play.
 "Reset progress" (asks first) clears only the profile, never the games' own
-best scores or the settings.
+best scores (so All-Time Best stays) or the settings.
 
 | Achievement | How |
 |---|---|
-| 🎮 First Play | play any game |
-| 🕹️ Arcade Regular | play 10 sessions |
-| 🖐️ Five of Five | play all 5 games |
+| 🎮 First Play | finish any game |
+| 🕹️ Arcade Regular | finish 10 games |
+| 🖐️ Five of Five | finish each of the 5 games |
 | 📈 High Score | beat your own best in any game |
 | ⭐ All-Star | have a best score in all 5 games |
 | 🌈 Chain Reaction | x8 combo in Color Chaos |
@@ -27,7 +28,7 @@ best scores or the settings.
 | 🎯 Sharpshooter | Space Tap: 25+ hits at 90%+ accuracy |
 | 💥 Survivor | survive 30 s in Laser Dodge |
 
-The last five are each game's milestone ("games mastered").
+The last five are milestones for each game.
 
 ## Color Chaos: 60 second challenge
 

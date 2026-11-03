@@ -32,7 +32,7 @@
         <dialog id="reset-dialog" class="settings reset-dialog" aria-labelledby="reset-title">
             <form method="dialog" class="settings-panel">
                 <h2 id="reset-title" class="settings-title">Reset progress?</h2>
-                <p class="settings-intro">This clears your Arcade Profile: games played, total score and achievements. Each game's own best score and your Sound / Motion settings stay.</p>
+                <p class="settings-intro">This clears your Arcade Profile: games played, total score, games mastered and achievements. Each game's own best score (All-Time Best) and your Sound / Motion settings stay.</p>
                 <div class="reset-actions">
                     <button id="reset-cancel" type="submit" value="cancel" class="btn btn-secondary">KEEP</button>
                     <button id="reset-confirm" type="submit" value="reset" class="btn btn-danger">RESET</button>
@@ -78,8 +78,8 @@
                         <div><dt>Games Played</dt><dd id="profile-played">0</dd></div>
                         <div><dt>Completed</dt><dd id="profile-completed">0</dd></div>
                         <div><dt>Total Score</dt><dd id="profile-total">0</dd></div>
-                        <div><dt>Best Overall</dt><dd id="profile-best">0</dd></div>
-                        <div class="profile-mastered"><dt>Games Mastered <small>(game milestone unlocked)</small></dt><dd id="profile-mastered">0 / 5</dd></div>
+                        <div><dt>All-Time Best</dt><dd id="profile-best">0</dd></div>
+                        <div class="profile-mastered"><dt>Games Mastered <small>(finished with a best score)</small></dt><dd id="profile-mastered">0 / 5</dd></div>
                     </dl>
                     <button id="profile-reset" type="button" class="link-button">Reset progress</button>
                 </section>

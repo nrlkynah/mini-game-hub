@@ -635,11 +635,12 @@ button { font: inherit; color: inherit; }
 .btn-danger { font-size: 1rem; color: #fff; background: rgba(255, 61, 113, 0.18); border: 2px solid var(--danger); box-shadow: 0 0 12px rgba(255, 61, 113, 0.35); }
 .btn-danger:hover { background: rgba(255, 61, 113, 0.32); }
 
-/* Achievement toasts: bottom of the screen, never in the way of a tap. */
+/* Achievement toasts: just under the top bar, clear of the hub's lists and the
+   results buttons lower down; they never take a tap. */
 .toasts {
     position: fixed;
     left: 50%;
-    bottom: max(16px, env(safe-area-inset-bottom));
+    top: calc(max(18px, env(safe-area-inset-top)) + 58px);
     z-index: 50;
     display: flex;
     flex-direction: column;

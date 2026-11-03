@@ -120,16 +120,74 @@ test('achievements: First Play and Arcade Regular unlock with a timestamp, and s
   assert.equal(reloaded.find((a) => a.id === 'arcade-regular').unlocked, true);
 });
 
-test('achievements: Five of Five needs every game played; All-Star needs a best in every game', () => {
+test('achievements: Five of Five needs each game finished once; All-Star needs a best in every game', () => {
   const profile = createProfile(memory());
   for (const id of IDS.slice(0, 4)) play(profile, id, 100);
+  play(profile, 'space-tap', 100); // the same game again does not count twice
   assert.equal(unlockedIds(profile).includes('five-of-five'), false);
 
-  profile.recordGameResult({ gameId: 'laser-dodge', score: 0, completed: false }); // played, but no best
-  assert.equal(unlockedIds(profile).includes('five-of-five'), true);
-  assert.equal(unlockedIds(profile).includes('all-star'), false);
+  profile.recordGameResult({ gameId: 'laser-dodge', score: 0, completed: false }); // opened and quit: not enough
+  assert.equal(unlockedIds(profile).includes('five-of-five'), false);
 
-  assert.deepEqual(play(profile, 'laser-dodge', 900).unlocked.map((a) => a.id), ['all-star']);
+  assert.deepEqual(play(profile, 'laser-dodge', 900).unlocked.map((a) => a.id).sort(), ['all-star', 'five-of-five']);
+});
+
+test('achievements: opening a game and quitting it unlocks nothing', () => {
+  const profile = createProfile(memory());
+  for (let i = 0; i < 12; i++) {
+    for (const id of IDS) {
+      assert.deepEqual(profile.recordGameResult({ gameId: id, score: 500, completed: false }).unlocked, []);
+    }
+  }
+
+  const p = profile.get();
+  assert.equal(p.played, 60);
+  assert.equal(p.completed, 0);
+  assert.ok(p.achievements.every((a) => !a.unlocked)); // no First Play, Arcade Regular or Five of Five
+  assert.equal(p.mastered, 0);
+});
+
+test('achievements: First Play needs a finished game; Arcade Regular counts finished games only', () => {
+  const profile = createProfile(memory());
+  profile.recordGameResult({ gameId: 'color-chaos', score: 0, completed: false });
+  assert.equal(unlockedIds(profile).includes('first-play'), false);
+
+  assert.deepEqual(play(profile, 'color-chaos', 0).unlocked.map((a) => a.id), ['first-play']); // finishing counts, even with 0 points
+
+  for (let i = 0; i < 20; i++) profile.recordGameResult({ gameId: 'space-tap', score: 0, completed: false });
+  for (let i = 0; i < 8; i++) play(profile, 'space-tap', 10);
+  assert.equal(unlockedIds(profile).includes('arcade-regular'), false); // 9 finished, 29 played
+  assert.ok(play(profile, 'space-tap', 10).unlocked.some((a) => a.id === 'arcade-regular'));
+});
+
+test('profile: Games Mastered counts the games finished with a best score, once each', () => {
+  const profile = createProfile(memory({ [STORAGE_KEYS.best]: JSON.stringify({ score: 6000, combo: 5 }) }));
+  assert.equal(profile.get().mastered, 0); // a best from before the profile is not mastery yet
+
+  play(profile, 'memory-matrix', 300);
+  assert.equal(profile.get().mastered, 1);
+  play(profile, 'neon-reflex', 2000);
+  assert.equal(profile.get().mastered, 2);
+  play(profile, 'neon-reflex', 2500); // the same game again
+  play(profile, 'memory-matrix', 100);
+  assert.equal(profile.get().mastered, 2);
+
+  profile.recordGameResult({ gameId: 'space-tap', score: 999, completed: false }); // quit: no
+  play(profile, 'laser-dodge', 0); // finished, but no score to be a best: no
+  assert.equal(profile.get().mastered, 2);
+
+  play(profile, 'color-chaos', 10); // finished now; its best (6000, from before) counts
+  assert.equal(profile.get().mastered, 3);
+});
+
+test('profile: game milestones do not change Games Mastered', () => {
+  const profile = createProfile(memory());
+  const done = profile.recordGameResult({ gameId: 'neon-reflex', score: 0, completed: true, metadata: { hits: 10, averageReaction: 180 } });
+  assert.ok(done.unlocked.some((a) => a.id === 'lightning'));
+  assert.equal(profile.get().mastered, 0); // a milestone with no best score is not mastery
+
+  play(profile, 'neon-reflex', 1200);
+  assert.equal(profile.get().mastered, 1);
 });
 
 test('achievements: High Score needs beating an earlier best, not just a first score', () => {
@@ -165,8 +223,6 @@ test('achievements: game milestones follow each game\'s results', () => {
 
   assert.ok(!unlocks('laser-dodge', { timeMs: 30_000 }, false).includes('survivor')); // only for a finished run
   assert.ok(unlocks('laser-dodge', { timeMs: 30_000 }).includes('survivor'));
-
-  assert.equal(profile.get().mastered, 5);
 });
 
 test('achievements: listeners hear about new unlocks only', () => {
@@ -205,11 +261,15 @@ test('profile: reset clears plays, scores and achievements only', () => {
   for (const id of IDS) play(profile, id, 1000);
   assert.ok(profile.get().achievements.some((a) => a.unlocked));
 
+  assert.equal(profile.get().mastered, 5);
+  assert.equal(profile.get().bestOverall, 1000);
+
   profile.reset();
   const p = profile.get();
-  assert.deepEqual([p.played, p.completed, p.totalScore], [0, 0, 0]);
+  assert.deepEqual([p.played, p.completed, p.totalScore, p.mastered], [0, 0, 0, 0]);
   assert.ok(p.achievements.every((a) => !a.unlocked));
-  assert.equal(p.games['color-chaos'].best, 777); // the game's own best is still there
+  assert.equal(p.games['color-chaos'].best, 777); // the game's own best is still there …
+  assert.equal(p.bestOverall, 777); // … so All-Time Best stays (from the games' saved bests)
 
   const saved = backend.dump();
   assert.equal(saved['mgh.sound'], 'off');
