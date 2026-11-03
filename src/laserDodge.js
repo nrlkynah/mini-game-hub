@@ -16,6 +16,7 @@ import { createAudio } from './app/audio.js';
 import { celebrate, comboTier, runCountdown } from './app/effects.js';
 import { createLaserStorage } from './app/laserStorage.js';
 import { createLaserView } from './app/laserView.js';
+import { profile } from './app/profile.js';
 import { settings } from './app/settings.js';
 
 const OVER_PAUSE_MS = 1300;
@@ -234,6 +235,7 @@ function endRound() {
 
   const final = game;
   const saved = storage.saveResult(final);
+  profile.recordGameResult({ gameId: 'laser-dodge', score: final.score, completed: true, metadata: { timeMs: final.elapsedMs, bestStreak: final.bestStreak, nearMisses: final.nearMisses } });
   later(() => showResults(final, saved), OVER_PAUSE_MS);
 }
 
@@ -258,6 +260,9 @@ function showResults(final, { best, isNewBest }) {
 }
 
 function stopRound() {
+  if (game && startedAt > 0 && game.status !== 'over') {
+    profile.recordGameResult({ gameId: 'laser-dodge', score: game.score, completed: false }); // left before the end: played, not completed
+  }
   cancelAnimationFrame(frame);
   timers.forEach(clearTimeout);
   timers = [];

@@ -114,6 +114,7 @@ async function run() {
   check('Back to Hub returns to the hub', await js(`!document.getElementById('screen-hub').hidden && document.getElementById('screen-home').hidden`));
 
   await runSettings();
+  await runProfile();
 
   if (!ONLY || ONLY === 'color-chaos') {
     await runColorChaos();
@@ -361,6 +362,117 @@ async function runSettings() {
     check(`settings ${w}×${h}: top bar, title and cards fit; the dialog fits; no horizontal scroll`, hub.bar && hub.title && hub.cards && hub.buttons && dialog && (await noHorizontalScroll()), JSON.stringify({ ...hub, dialog }));
   }
   await viewport(390, 844, true);
+}
+
+// ----- Arcade Profile + Achievements -----
+
+async function runProfile() {
+  await viewport(390, 844, true);
+  await open(URL_ROOT);
+  const empty = await profileOnHub();
+  check('profile: the hub shows the Arcade Profile and Achievements', empty.visible, JSON.stringify(empty));
+  check('profile: a new player starts at 0 with all 10 achievements locked',
+    empty.played === '0' && empty.completed === '0' && empty.total === '0' && empty.best === '0' && empty.mastered === '0 / 5' && empty.items === 10 && empty.locked === 10 && empty.count === '0 / 10');
+  await shot('60-profile-empty-390');
+
+  // ----- one game, played to the end: a quick Memory Matrix run (clear level 1, then three mistakes) -----
+  await click('[data-testid="play-memory-matrix"]');
+  await click('#mm-play');
+  for (const t of await readPattern()) await click(tile(t));
+  for (let i = 0; i < 3; i++) {
+    const pattern = await readPattern();
+    await click(tile(wrongFor(pattern)));
+  }
+  check('profile: finishing a game shows an "achievement unlocked" toast for First Play', await waitFor(`document.getElementById('toasts').textContent.includes('First Play')`, 3000));
+  await waitFor(`!document.getElementById('screen-matrix-results').hidden`, 4000);
+  await shot('61-profile-toast-390');
+  const score = await text('mm-res-score');
+  check('profile: the toast does not block the results buttons', await js(`getComputedStyle(document.getElementById('toasts')).pointerEvents === 'none'`));
+  await click('#mm-home');
+  await sleep(250);
+  const afterGame = await profileOnHub();
+  check('profile: back on the hub, the stats show the game', afterGame.played === '1' && afterGame.completed === '1' && afterGame.total === score && afterGame.best === score && Number(score.replace(/,/g, '')) >= 100, JSON.stringify(afterGame));
+  check('profile: First Play is unlocked and the rest stay locked', afterGame.unlocked.join() === 'first-play' && afterGame.locked === 9 && afterGame.count === '1 / 10');
+  await shot('62-profile-after-390');
+
+  // ----- a game left early counts as played, not completed -----
+  await open(SPACE_URL);
+  await click('#st-play');
+  await waitFor(`!document.getElementById('st-field').classList.contains('is-locked')`, 5000);
+  await click('#st-quit');
+  await click('#screen-space-home .back-link');
+  await sleep(250);
+  const afterQuit = await profileOnHub();
+  check('profile: a game quit early counts as played but not completed, and adds no score', afterQuit.played === '2' && afterQuit.completed === '1' && afterQuit.total === score, JSON.stringify(afterQuit));
+
+  // ----- persistence -----
+  await open(URL_ROOT);
+  const reloaded = await profileOnHub();
+  const saved = JSON.parse(await js(`localStorage.getItem('mgh.profile.v1')`));
+  check('profile: stats and achievements survive a refresh', reloaded.played === '2' && reloaded.completed === '1' && reloaded.unlocked.join() === 'first-play');
+  check('profile: the unlock time is saved', Number.isSafeInteger(saved.achievements['first-play']) && saved.achievements['first-play'] > 1_700_000_000_000, JSON.stringify(saved.achievements));
+  await js(`localStorage.setItem('mgh.profile.v1', '{broken')`);
+  await open(URL_ROOT);
+  check('profile: a corrupted profile does not break the hub', (await profileOnHub()).played === '0' && errors.length === 0);
+  await js(`localStorage.setItem('mgh.profile.v1', ${JSON.stringify(JSON.stringify(saved))})`);
+
+  // ----- reset progress: asks first, clears only the profile -----
+  await js(`localStorage.setItem('mgh.sound', 'off')`);
+  await open(URL_ROOT);
+  const matrixBest = await js(`localStorage.getItem('mgh.memoryMatrix.best.v1')`);
+  await click('#profile-reset');
+  check('profile: Reset progress asks for confirmation first', await js(`document.getElementById('reset-dialog').open`));
+  await click('#reset-cancel');
+  check('profile: choosing Keep changes nothing', !(await js(`document.getElementById('reset-dialog').open`)) && (await profileOnHub()).played === '2');
+  await click('#profile-reset');
+  await click('#reset-confirm');
+  const cleared = await profileOnHub();
+  check('profile: Reset clears the profile and achievements', cleared.played === '0' && cleared.completed === '0' && cleared.total === '0' && cleared.locked === 10, JSON.stringify(cleared));
+  check('profile: Reset keeps each game\'s best and the Sound setting', (await js(`localStorage.getItem('mgh.memoryMatrix.best.v1')`)) === matrixBest && matrixBest !== null && (await js(`localStorage.getItem('mgh.sound')`)) === 'off'
+    && (await js(`document.querySelector('[data-game="memory-matrix"] .game-best b').textContent`)) === score);
+  await open(URL_ROOT);
+  check('profile: still reset after a refresh', (await profileOnHub()).played === '0');
+
+  // ----- layout at every size -----
+  await js(`localStorage.setItem('mgh.profile.v1', ${JSON.stringify(JSON.stringify(saved))})`);
+  for (const [w, h, mobile] of [[360, 640, true], [390, 844, true], [768, 1024, true], [1280, 800, false]]) {
+    await viewport(w, h, mobile);
+    await open(URL_ROOT);
+    await sleep(500); // let the cards finish sliding in
+    const fit = await js(`(() => {
+      const inside = (el) => { const r = el.getBoundingClientRect(); return r.left >= -0.5 && r.right <= innerWidth + 0.5; };
+      const boxes = [...document.querySelectorAll('#profile, #achievements, .profile-stats div, .achievement')];
+      const text = [...document.querySelectorAll('.profile-stats dd, .achievement-text b, .achievement-text small')].every((n) => n.scrollWidth <= n.clientWidth + 1);
+      const reset = document.getElementById('profile-reset').getBoundingClientRect();
+      return { inside: boxes.every(inside), text, reset: reset.height >= 44 };
+    })()`);
+    await click('#profile-reset');
+    const dialog = await js(`(() => { const d = document.getElementById('reset-dialog').getBoundingClientRect(); const b = [...document.querySelectorAll('.reset-actions .btn')].every((x) => x.offsetHeight >= 44); return d.left >= 0 && d.right <= innerWidth && d.bottom <= innerHeight && b; })()`);
+    await key('Escape');
+    await js(`document.getElementById('achievements').scrollIntoView()`);
+    await shot(`63-profile-${w}`);
+    check(`profile ${w}×${h}: profile and achievements fit, nothing overflows, no horizontal scroll`, fit.inside && fit.text && fit.reset && dialog && (await noHorizontalScroll()), JSON.stringify({ ...fit, dialog }));
+  }
+  await viewport(390, 844, true);
+
+  // Leave things as the game sections expect: an empty profile, no Memory Matrix best, sound on.
+  await js(`localStorage.removeItem('mgh.profile.v1'); localStorage.removeItem('mgh.memoryMatrix.best.v1'); localStorage.removeItem('mgh.sound')`);
+}
+
+/** What the hub's profile card and achievements show. */
+function profileOnHub() {
+  return js(`(() => {
+    const t = (id) => document.getElementById(id).textContent.trim();
+    const shown = (id) => { const r = document.getElementById(id).getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+    const items = [...document.querySelectorAll('#achievement-list .achievement')];
+    return {
+      visible: shown('profile') && shown('achievements') && !document.getElementById('screen-hub').hidden,
+      played: t('profile-played'), completed: t('profile-completed'), total: t('profile-total'), best: t('profile-best'), mastered: t('profile-mastered'),
+      count: t('achievements-count'), items: items.length,
+      locked: items.filter((i) => i.classList.contains('is-locked')).length,
+      unlocked: items.filter((i) => i.classList.contains('is-unlocked')).map((i) => i.dataset.achievement),
+    };
+  })()`);
 }
 
 // ----- Neon Reflex -----

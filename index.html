@@ -28,6 +28,18 @@
             </div>
         </nav>
 
+        <!-- Reset Progress: confirm first -->
+        <dialog id="reset-dialog" class="settings reset-dialog" aria-labelledby="reset-title">
+            <form method="dialog" class="settings-panel">
+                <h2 id="reset-title" class="settings-title">Reset progress?</h2>
+                <p class="settings-intro">This clears your Arcade Profile: games played, total score and achievements. Each game's own best score and your Sound / Motion settings stay.</p>
+                <div class="reset-actions">
+                    <button id="reset-cancel" type="submit" value="cancel" class="btn btn-secondary">KEEP</button>
+                    <button id="reset-confirm" type="submit" value="reset" class="btn btn-danger">RESET</button>
+                </div>
+            </form>
+        </dialog>
+
         <!-- Settings: global, for every game -->
         <dialog id="settings" class="settings" aria-labelledby="settings-title">
             <form method="dialog" class="settings-panel">
@@ -58,6 +70,25 @@
             </h1>
             <p class="subtitle">Futuristic Neon Arcade</p>
             <div id="hub-games" class="game-grid"></div>
+
+            <div class="hub-extras">
+                <section id="profile" class="profile panel" aria-labelledby="profile-title">
+                    <h2 id="profile-title" class="hub-section-title"><span aria-hidden="true">👾</span> Arcade Profile</h2>
+                    <dl class="profile-stats">
+                        <div><dt>Games Played</dt><dd id="profile-played">0</dd></div>
+                        <div><dt>Completed</dt><dd id="profile-completed">0</dd></div>
+                        <div><dt>Total Score</dt><dd id="profile-total">0</dd></div>
+                        <div><dt>Best Overall</dt><dd id="profile-best">0</dd></div>
+                        <div class="profile-mastered"><dt>Games Mastered <small>(game milestone unlocked)</small></dt><dd id="profile-mastered">0 / 5</dd></div>
+                    </dl>
+                    <button id="profile-reset" type="button" class="link-button">Reset progress</button>
+                </section>
+
+                <section id="achievements" class="achievements panel" aria-labelledby="achievements-title">
+                    <h2 id="achievements-title" class="hub-section-title"><span aria-hidden="true">🏆</span> Achievements <span id="achievements-count" class="achievements-count">0 / 10</span></h2>
+                    <ul id="achievement-list" class="achievement-list"></ul>
+                </section>
+            </div>
         </section>
 
         <!-- Color Chaos: home -->
@@ -443,6 +474,8 @@
             <button id="ld-home" type="button" class="btn btn-secondary" aria-label="Home: back to the Mini Game Hub">HOME</button>
         </section>
     </main>
+
+    <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
 
     <noscript><p class="noscript">Mini Game Hub needs JavaScript to run.</p></noscript>
 </body>

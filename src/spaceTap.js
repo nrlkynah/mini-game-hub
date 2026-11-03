@@ -14,6 +14,7 @@ import { createAudio } from './app/audio.js';
 import { celebrate, comboTier, runCountdown } from './app/effects.js';
 import { createSpaceStorage } from './app/spaceStorage.js';
 import { createSpaceView } from './app/spaceView.js';
+import { profile } from './app/profile.js';
 import { settings } from './app/settings.js';
 
 const DONE_PAUSE_MS = 1200;
@@ -220,6 +221,7 @@ function endRound() {
 
   const final = game;
   const saved = storage.saveResult({ score: final.score, bestCombo: final.bestCombo, accuracy: accuracy(final), hits: final.hits });
+  profile.recordGameResult({ gameId: 'space-tap', score: final.score, completed: true, metadata: { hits: final.hits, accuracy: accuracy(final), bestCombo: final.bestCombo } });
 
   later(() => showResults(final, saved), DONE_PAUSE_MS);
 }
@@ -246,6 +248,9 @@ function showResults(final, { best, isNewBest }) {
 }
 
 function stopRound() {
+  if (game && startedAt > 0 && game.status !== 'over') {
+    profile.recordGameResult({ gameId: 'space-tap', score: game.score, completed: false }); // left before the end: played, not completed
+  }
   cancelAnimationFrame(frame);
   timers.forEach(clearTimeout);
   timers = [];

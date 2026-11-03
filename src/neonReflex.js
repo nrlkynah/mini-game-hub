@@ -12,6 +12,7 @@ import { createArenaView } from './app/arenaView.js';
 import { createAudio } from './app/audio.js';
 import { celebrate, comboTier, runCountdown } from './app/effects.js';
 import { createReflexStorage } from './app/reflexStorage.js';
+import { profile } from './app/profile.js';
 import { settings } from './app/settings.js';
 
 const DONE_PAUSE_MS = 1100;
@@ -177,6 +178,7 @@ function endRound() {
 
   const final = game;
   const saved = storage.saveResult({ score: final.score, bestReaction: bestReaction(final), bestCombo: final.bestCombo });
+  profile.recordGameResult({ gameId: 'neon-reflex', score: final.score, completed: true, metadata: { hits: final.hits, averageReaction: averageReaction(final), bestReaction: bestReaction(final), bestCombo: final.bestCombo } });
 
   later(() => showResults(final, saved), DONE_PAUSE_MS);
 }
@@ -204,6 +206,9 @@ function showResults(final, { best, isNewBest, isNewReaction }) {
 }
 
 function stopRound() {
+  if (game && startedAt > 0 && game.status !== 'over') {
+    profile.recordGameResult({ gameId: 'neon-reflex', score: game.score, completed: false }); // left before the end: played, not completed
+  }
   cancelAnimationFrame(frame);
   timers.forEach(clearTimeout);
   timers = [];

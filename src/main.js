@@ -10,6 +10,7 @@ import * as memoryMatrix from './memoryMatrix.js';
 import * as neonReflex from './neonReflex.js';
 import * as spaceTap from './spaceTap.js';
 import { createHub } from './hub.js';
+import { createProfileView } from './app/profileView.js';
 import { createSettingsView } from './app/settingsView.js';
 
 /** Playable games by registry id (see src/games.js). */
@@ -18,6 +19,16 @@ const players = { 'color-chaos': colorChaos, 'neon-reflex': neonReflex, 'memory-
 const $ = (id) => document.getElementById(id);
 
 createSettingsView({ open: $('settings-open'), dialog: $('settings'), sound: $('setting-sound'), motion: $('setting-motion'), motionNote: $('setting-motion-note') });
+
+const profileView = createProfileView({
+  stats: { played: $('profile-played'), completed: $('profile-completed'), total: $('profile-total'), best: $('profile-best'), mastered: $('profile-mastered') },
+  count: $('achievements-count'),
+  list: $('achievement-list'),
+  resetOpen: $('profile-reset'),
+  resetDialog: $('reset-dialog'),
+  resetConfirm: $('reset-confirm'),
+  toasts: $('toasts'),
+});
 
 const hubScreen = document.getElementById('screen-hub');
 const hub = createHub(document.getElementById('hub-games'), players);
@@ -42,6 +53,7 @@ function route() {
   } else {
     document.title = 'Mini Game Hub · Futuristic Neon Arcade';
     hub.refresh();
+    profileView.render();
   }
 }
 

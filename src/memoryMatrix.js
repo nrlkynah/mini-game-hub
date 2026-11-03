@@ -13,6 +13,7 @@ import { createAudio } from './app/audio.js';
 import { celebrate, comboTier, runCountdown } from './app/effects.js';
 import { createMatrixStorage } from './app/matrixStorage.js';
 import { createMatrixView, label } from './app/matrixView.js';
+import { profile } from './app/profile.js';
 import { settings } from './app/settings.js';
 
 const OVER_PAUSE_MS = 1400;
@@ -253,6 +254,7 @@ function endRound() {
 
   const final = game;
   const saved = storage.saveResult(final);
+  profile.recordGameResult({ gameId: 'memory-matrix', score: final.score, completed: true, metadata: { cleared: final.cleared, bestStreak: final.bestStreak, accuracy: accuracy(final) } });
 
   later(() => showResults(final, saved), OVER_PAUSE_MS);
 }
@@ -278,6 +280,9 @@ function showResults(final, { best, isNewBest }) {
 }
 
 function stopRound() {
+  if (game && startedAt > 0 && game.status !== 'over') {
+    profile.recordGameResult({ gameId: 'memory-matrix', score: game.score, completed: false }); // left before the end: played, not completed
+  }
   cancelAnimationFrame(frame);
   timers.forEach(clearTimeout);
   timers = [];

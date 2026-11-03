@@ -7,6 +7,28 @@ Matrix, Space Tap and Laser Dodge. No accounts, no backend, no dependencies.
 Saved on the device. Motion ON still follows the device's reduce-motion
 setting; Motion OFF always calms animations (gameplay feedback stays).
 
+**Arcade Profile (on the hub):** games played and completed, total score,
+best overall score and games mastered, across all five games. A game left
+early counts as played but adds no score. 10 achievements, saved with the
+time they unlocked; a small toast shows each new one without stopping play.
+"Reset progress" (asks first) clears only the profile, never the games' own
+best scores or the settings.
+
+| Achievement | How |
+|---|---|
+| 🎮 First Play | play any game |
+| 🕹️ Arcade Regular | play 10 sessions |
+| 🖐️ Five of Five | play all 5 games |
+| 📈 High Score | beat your own best in any game |
+| ⭐ All-Star | have a best score in all 5 games |
+| 🌈 Chain Reaction | x8 combo in Color Chaos |
+| ⚡ Lightning Reflexes | Neon Reflex: average ≤ 350 ms with 8+ hits |
+| 🧠 Total Recall | clear level 6 in Memory Matrix (8 tiles) |
+| 🎯 Sharpshooter | Space Tap: 25+ hits at 90%+ accuracy |
+| 💥 Survivor | survive 30 s in Laser Dodge |
+
+The last five are each game's milestone ("games mastered").
+
 ## Color Chaos: 60 second challenge
 
 Tap a group of **2 or more touching tiles of the same colour** to clear it.
@@ -159,6 +181,8 @@ src/
     settingsView.js  the ⚙ Settings dialog
     effects.js     comboTier, the 3-2-1-GO! countdown, new-best confetti
     safeStorage.js safe localStorage helpers (never throw, validate numbers)
+    profile.js     Arcade Profile: recordGameResult(), stats, achievements, reset
+    profileView.js the hub's profile card, achievements list, reset dialog, toasts
     boardView.js   draws the Color Chaos board, pointer + keyboard input, effects
     arenaView.js   draws the Neon Reflex arena, target and effects
     matrixView.js  draws the Memory Matrix grid, pointer + keyboard input, effects
@@ -190,7 +214,9 @@ scripts/       dev server, checks, browser end-to-end test
   `mgh.neonReflex.best.v1` (score, fastest reaction, combo),
   `mgh.memoryMatrix.best.v1` (score, highest level, streak),
   `mgh.spaceTap.best.v1` (score, combo, accuracy),
-  `mgh.laserDodge.best.v1` (score, time in ms, survival streak), `mgh.sound`
+  `mgh.laserDodge.best.v1` (score, time in ms, survival streak),
+  `mgh.profile.v1` (the Arcade Profile; a new one starts from the games'
+  existing bests, which it only reads), `mgh.sound`
   and `mgh.motion`. Bad or tampered values fall back to defaults.
 - **Sound:** nothing is created until the player presses Play, and sound
   can be turned off in Settings (or on the Color Chaos screen).

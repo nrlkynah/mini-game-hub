@@ -562,6 +562,108 @@ button { font: inherit; color: inherit; }
     .game-grid[data-playable="5"] .game-card.is-playable:nth-child(n + 4) { grid-column: span 3; }
 }
 
+/* ---------- hub: arcade profile and achievements ---------- */
+
+.hub-extras { display: grid; gap: 12px; width: 100%; margin-top: 8px; text-align: left; }
+@media (min-width: 1024px) {
+    .hub-extras { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 16px; align-items: start; }
+}
+
+.hub-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 0.9rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #f2e6ff;
+    text-shadow: 0 0 10px rgba(157, 92, 255, 0.7);
+}
+.profile, .achievements { padding: 16px; border-color: rgba(157, 92, 255, 0.4); }
+
+.profile-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.profile-stats div { min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: rgba(5, 4, 16, 0.45); }
+.profile-stats dt { font-family: var(--font-display); font-weight: 600; font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+.profile-stats dt small { display: block; margin-top: 2px; font-family: var(--font-body); font-size: 0.68rem; letter-spacing: 0; text-transform: none; }
+.profile-stats dd { margin: 4px 0 0; font-family: var(--font-display); font-weight: 900; font-size: clamp(1.1rem, 5vw, 1.5rem); color: #fff; font-variant-numeric: tabular-nums; text-shadow: 0 0 10px var(--cyan); overflow-wrap: anywhere; }
+.profile-stats .profile-mastered { grid-column: 1 / -1; border-color: rgba(166, 255, 60, 0.4); }
+.profile-mastered dd { text-shadow: 0 0 10px var(--lime); }
+
+/* Small and quiet on purpose: resetting is rare. */
+.link-button {
+    min-height: 44px;
+    margin-top: 8px;
+    padding: 0 4px;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.link-button:hover { color: var(--danger); }
+
+.achievements-count { margin-left: auto; font-size: 0.75rem; letter-spacing: 0.1em; color: var(--lime); text-shadow: 0 0 8px rgba(166, 255, 60, 0.6); }
+.achievement-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.achievement {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(5, 4, 16, 0.45);
+}
+.achievement-icon { flex-shrink: 0; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; font-size: 1.15rem; background: rgba(14, 11, 40, 0.8); }
+.achievement-text { display: flex; flex-direction: column; min-width: 0; }
+.achievement-text b { font-family: var(--font-display); font-weight: 800; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.achievement-text small { font-size: 0.78rem; color: var(--muted); }
+.achievement.is-unlocked { border-color: rgba(166, 255, 60, 0.55); background: linear-gradient(90deg, rgba(166, 255, 60, 0.1), rgba(5, 4, 16, 0.45)); box-shadow: 0 0 12px rgba(166, 255, 60, 0.15); }
+.achievement.is-unlocked .achievement-icon { background: rgba(166, 255, 60, 0.14); box-shadow: 0 0 10px rgba(166, 255, 60, 0.35); }
+.achievement.is-unlocked .achievement-text b { color: #efffd8; text-shadow: 0 0 8px rgba(166, 255, 60, 0.6); }
+.achievement.is-locked { opacity: 0.6; }
+.achievement.is-locked .achievement-text b { color: #c9cdea; }
+
+/* Reset confirmation */
+.reset-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.reset-actions .btn { width: 100%; }
+.btn-danger { font-size: 1rem; color: #fff; background: rgba(255, 61, 113, 0.18); border: 2px solid var(--danger); box-shadow: 0 0 12px rgba(255, 61, 113, 0.35); }
+.btn-danger:hover { background: rgba(255, 61, 113, 0.32); }
+
+/* Achievement toasts: bottom of the screen, never in the way of a tap. */
+.toasts {
+    position: fixed;
+    left: 50%;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(100% - 32px, 360px);
+    translate: -50% 0;
+    pointer-events: none;
+}
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid rgba(166, 255, 60, 0.7);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(32, 24, 82, 0.96), rgba(10, 8, 30, 0.97));
+    box-shadow: 0 0 22px rgba(166, 255, 60, 0.35), 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.toast-icon { font-size: 1.6rem; filter: drop-shadow(0 0 8px rgba(255, 224, 58, 0.8)); }
+.toast-text { display: flex; flex-direction: column; min-width: 0; }
+.toast-text small { font-family: var(--font-display); font-weight: 800; font-size: 0.58rem; letter-spacing: 0.24em; text-transform: uppercase; color: var(--lime); }
+.toast-text b { font-family: var(--font-display); font-weight: 900; font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; }
+.toast-text span { font-size: 0.8rem; color: var(--muted); }
+
 /* ---------- home: title screen ---------- */
 
 .home { justify-content: center; text-align: center; }

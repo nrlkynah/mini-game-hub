@@ -9,6 +9,7 @@ import { applyMove, createGame, remainingMs, secondsLeft, tick } from './game/en
 import { createAudio } from './app/audio.js';
 import { createBoardView } from './app/boardView.js';
 import { celebrate, comboTier, runCountdown } from './app/effects.js';
+import { profile } from './app/profile.js';
 import { settings } from './app/settings.js';
 import { createStorage } from './app/storage.js';
 
@@ -193,6 +194,7 @@ function endRound() {
 
   const final = game;
   const { isNewBest, best } = storage.saveResult(final);
+  profile.recordGameResult({ gameId: 'color-chaos', score: final.score, completed: true, metadata: { bestCombo: final.bestCombo, matches: final.matches } });
 
   later(() => showResults(final, best, isNewBest), TIMES_UP_PAUSE_MS);
 }
@@ -217,6 +219,9 @@ function showResults(final, best, isNewBest) {
 }
 
 function stopRound() {
+  if (game && startedAt > 0 && game.status !== 'over') {
+    profile.recordGameResult({ gameId: 'color-chaos', score: game.score, completed: false }); // left before the end: played, not completed
+  }
   cancelAnimationFrame(frame);
   timers.forEach(clearTimeout);
   timers = [];
